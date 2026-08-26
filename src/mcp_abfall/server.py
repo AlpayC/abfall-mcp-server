@@ -10,11 +10,14 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import logging
+import os
 import sys
 from typing import Annotated, Any
 
 from mcp.server.mcpserver import MCPServer
 from pydantic import Field
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from . import __version__, geo, registry, resolve, wcs
 
@@ -47,6 +50,12 @@ mcp = MCPServer(
     version=__version__,
     instructions=INSTRUCTIONS,
 )
+
+
+@mcp.custom_route("/health", methods=["GET"], include_in_schema=False)
+async def health(_: Request) -> JSONResponse:
+    """Leichter Bereitschaftstest fuer Container-Orchestratoren."""
+    return JSONResponse({"status": "ok", "version": __version__})
 
 
 # --------------------------------------------------------------------------
@@ -479,8 +488,17 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Streamable HTTP statt stdio.",
     )
-    parser.add_argument("--host", default="127.0.0.1", help="Nur mit --http.")
-    parser.add_argument("--port", type=int, default=8000, help="Nur mit --http.")
+    parser.add_argument(
+        "--host",
+        default=os.environ.get("MCP_ABFALL_HOST", "127.0.0.1"),
+        help="Nur mit --http.",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=os.environ.get("PORT", os.environ.get("MCP_ABFALL_PORT", "8000")),
+        help="Nur mit --http.",
+    )
     parser.add_argument(
         "--log-level",
         default="WARNING",
@@ -499,9 +517,13 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.http:
-        mcp.settings.host = args.host
-        mcp.settings.port = args.port
-        mcp.run(transport="streamable-http")
+        mcp.run(
+            transport="streamable-http",
+            host=args.host,
+            port=args.port,
+            json_response=True,
+            stateless_http=True,
+        )
     else:
         mcp.run(transport="stdio")
     return 0

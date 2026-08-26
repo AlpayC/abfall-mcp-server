@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+build
+dist
+tests
+scripts
+release-notes.md
+.claude
+vendor/hacs_waste_collection_schedule/.git
+vendor/hacs_waste_collection_schedule/tests
