@@ -57,6 +57,21 @@ uv run python scripts/build_registry.py
 
 ## Wiring it up
 
+Public remote via Streamable HTTP:
+
+```json
+{
+  "mcpServers": {
+    "abfall": {
+      "url": "https://abfall-mcp.alpaycelik.dev/mcp"
+    }
+  }
+}
+```
+
+The service health endpoint is
+[`https://abfall-mcp.alpaycelik.dev/health`](https://abfall-mcp.alpaycelik.dev/health).
+
 Locally over stdio — in `claude_desktop_config.json` or `.mcp.json`:
 
 ```json

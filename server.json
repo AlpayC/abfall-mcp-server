@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.AlpayC/mcp-abfall",
+  "title": "Abfallkalender Deutschland",
+  "description": "Waste collection dates for German addresses from municipal authority calendars.",
+  "repository": {
+    "url": "https://github.com/AlpayC/mcp-abfall",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://abfall-mcp.alpaycelik.dev/mcp"
+    }
+  ]
+}

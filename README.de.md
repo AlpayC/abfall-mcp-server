@@ -59,6 +59,21 @@ uv run python scripts/build_registry.py
 
 ## Einbinden
 
+Öffentlich per Streamable HTTP:
+
+```json
+{
+  "mcpServers": {
+    "abfall": {
+      "url": "https://abfall-mcp.alpaycelik.dev/mcp"
+    }
+  }
+}
+```
+
+Der Status des Dienstes steht unter
+[`https://abfall-mcp.alpaycelik.dev/health`](https://abfall-mcp.alpaycelik.dev/health).
+
 Lokal per stdio — in `claude_desktop_config.json` bzw. `.mcp.json`:
 
 ```json
