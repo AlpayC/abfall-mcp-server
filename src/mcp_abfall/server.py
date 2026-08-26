@@ -12,12 +12,13 @@ import datetime as dt
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import Annotated, Any
 
 from mcp.server.mcpserver import MCPServer
 from pydantic import Field
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import FileResponse, JSONResponse, Response
 
 from . import __version__, geo, registry, resolve, wcs
 
@@ -56,6 +57,49 @@ mcp = MCPServer(
 async def health(_: Request) -> JSONResponse:
     """Leichter Bereitschaftstest fuer Container-Orchestratoren."""
     return JSONResponse({"status": "ok", "version": __version__})
+
+
+def _web_datei(*teile: str) -> Path | None:
+    """Eine gebaute Web-Datei finden, ohne das Web-Verzeichnis zu verlassen."""
+    standard = Path(__file__).resolve().parents[2] / "web" / "out"
+    wurzel = Path(os.environ.get("MCP_ABFALL_WEB_DIR", standard)).resolve()
+    datei = wurzel.joinpath(*teile).resolve()
+    try:
+        datei.relative_to(wurzel)
+    except ValueError:
+        return None
+    return datei if datei.is_file() else None
+
+
+def _web_antwort(*teile: str) -> Response:
+    datei = _web_datei(*teile)
+    if datei is None:
+        return Response(status_code=404)
+    return FileResponse(datei)
+
+
+@mcp.custom_route("/", methods=["GET"], include_in_schema=False)
+async def landingpage(_: Request) -> Response:
+    """Deutsche Landingpage aus dem statischen Next.js-Export."""
+    return _web_antwort("index.html")
+
+
+@mcp.custom_route("/en", methods=["GET"], include_in_schema=False)
+@mcp.custom_route("/en/", methods=["GET"], include_in_schema=False)
+async def landingpage_en(_: Request) -> Response:
+    """Englische Landingpage aus dem statischen Next.js-Export."""
+    return _web_antwort("en", "index.html")
+
+
+@mcp.custom_route("/favicon.ico", methods=["GET"], include_in_schema=False)
+async def favicon(_: Request) -> Response:
+    return _web_antwort("favicon.ico")
+
+
+@mcp.custom_route("/_next/{asset_path:path}", methods=["GET"], include_in_schema=False)
+async def web_asset(request: Request) -> Response:
+    """Nur von Next.js erzeugte Assets ausliefern; MCP-Routen bleiben separat."""
+    return _web_antwort("_next", request.path_params["asset_path"])
 
 
 # --------------------------------------------------------------------------

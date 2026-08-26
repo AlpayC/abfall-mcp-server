@@ -11,6 +11,9 @@ MCP server for the waste collection calendars of German cities and districts.
 Looks up collection dates — residual waste, organic waste, paper, packaging,
 bulky waste, hazardous waste collection points — for a given address.
 
+Website and interactive setup guide:
+[`abfall-mcp.alpaycelik.dev`](https://abfall-mcp.alpaycelik.dev/).
+
 ```
 address ──▶ Nominatim ──▶ municipality + district ──▶ provider search (995)
                                                               │

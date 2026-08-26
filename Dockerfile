@@ -1,5 +1,13 @@
 # syntax=docker/dockerfile:1.7
 
+FROM node:22-alpine AS web-build
+
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+RUN npm run build
+
 FROM ghcr.io/astral-sh/uv:0.8.22 AS uv
 FROM python:3.13-slim-bookworm
 
@@ -8,6 +16,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     MCP_ABFALL_CACHE_DIR=/var/cache/mcp-abfall \
+    MCP_ABFALL_WEB_DIR=/app/web \
     PORT=8000 \
     PATH="/app/.venv/bin:$PATH"
 
@@ -21,6 +30,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 COPY src ./src
 COPY data ./data
+COPY --from=web-build /web/out ./web
 COPY LICENSE NOTICE ./
 COPY vendor/hacs_waste_collection_schedule/LICENSE \
     ./vendor/hacs_waste_collection_schedule/LICENSE
