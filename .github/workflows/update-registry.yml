@@ -23,12 +23,12 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           fetch-depth: 1
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
@@ -73,7 +73,7 @@ jobs:
       # this falls back to the default token: the workflow still opens its
       # pull request, it just arrives without CI - the test result in the body
       # is then the only signal.
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.REGISTRY_PAT || github.token }}
           branch: data-source/update
