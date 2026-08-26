@@ -1,13 +1,13 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Träger fehlt komplett oder Portal hat sich geändert
+  - name: An authority is missing entirely, or its portal changed
     url: https://github.com/mampfes/hacs_waste_collection_schedule/issues
     about: >
-      Von dort kommt die Datenbasis. Wird es dort ergänzt, kommt es hier beim
-      nächsten Update automatisch an - und alle anderen Projekte profitieren mit.
-  - name: Frage oder Idee
+      That is where the data comes from. Added there, it arrives here with the
+      next update - and every other project using it benefits too.
+  - name: Question or idea
     url: https://github.com/AlpayC/mcp-abfall/discussions
-    about: Für alles, was noch kein Fehlerbericht ist.
-  - name: Sicherheitslücke
+    about: For anything that is not a bug report yet.
+  - name: Security vulnerability
     url: https://github.com/AlpayC/mcp-abfall/security/advisories/new
-    about: Bitte vertraulich melden, nicht als öffentliches Issue.
+    about: Please report privately, not as a public issue.

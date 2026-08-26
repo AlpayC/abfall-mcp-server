@@ -1,0 +1,62 @@
+name: An authority returns no collection dates
+description: No dates, or wrong dates, for a given address.
+labels: [authority]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do **not** post a full home address — street and town are
+        enough, and you can leave out or alter the house number. Issues are
+        public and get indexed by search engines.
+
+        If an authority is missing **entirely**, that usually belongs upstream
+        in [hacs_waste_collection_schedule](https://github.com/mampfes/hacs_waste_collection_schedule) —
+        that is where the data comes from, and everyone benefits. If you are
+        unsure, feel free to ask here first.
+
+  - type: input
+    id: place
+    attributes:
+      label: Town and street
+      placeholder: "Emsdetten, Kirchstraße"
+    validations:
+      required: true
+
+  - type: input
+    id: authority
+    attributes:
+      label: Responsible waste authority
+      description: If known. `finde_traeger` shows the name and the ID.
+      placeholder: "Kreis Steinfurt (app_abfallplus_de.kreis-steinfurt.f0b5f6)"
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: What came back?
+      options:
+        - "fehlgeschlagen – no authority returned dates"
+        - "rueckfrage – a follow-up question I cannot answer"
+        - "leer – authority responds without any dates"
+        - "kein_traeger – none was found for the address"
+        - "ok – but the dates are wrong"
+    validations:
+      required: true
+
+  - type: textarea
+    id: response
+    attributes:
+      label: The server's response
+      description: >
+        The fields `meldung`, `versuche` and `verwendete_argumente` are the most
+        informative. Feel free to redact town and house number.
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: other
+    attributes:
+      label: Anything else
+      description: >
+        Does the collection calendar on the authority's own website work? If you
+        know the portal URL, it helps with reproducing the problem.

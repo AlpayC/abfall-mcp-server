@@ -1,0 +1,66 @@
+name: Bug in the server
+description: Crashes, installation problems, MCP wiring, tools behaving wrongly.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If this is about a specific address returning no collection dates,
+        please use the **An authority returns no collection dates** template —
+        it asks the right questions.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens, and what did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can it be reproduced?
+      placeholder: |
+        1. uv run mcp-abfall
+        2. Call tool `abfuhrtermine` with …
+        3. …
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message or traceback
+      render: text
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "`uv run python -c 'import mcp_abfall; print(mcp_abfall.__version__)'`, or the commit."
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system and Python version
+      placeholder: "Windows 11, Python 3.13"
+    validations:
+      required: true
+
+  - type: input
+    id: client
+    attributes:
+      label: MCP client
+      description: If the problem occurred through a client.
+      placeholder: "Claude Code / Claude Desktop / custom client / plain stdio"
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Checked beforehand
+      options:
+        - label: "`git submodule update --init --depth 1` has run, `vendor/` is not empty"
+        - label: "`uv run python scripts/build_registry.py` has run, `data/providers.json` exists"

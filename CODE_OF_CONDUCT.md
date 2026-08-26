@@ -1,58 +1,53 @@
-# Verhaltenskodex
+# Code of Conduct
 
-## Unser Versprechen
+## Our pledge
 
-Wir als Mitglieder, Mitwirkende und Verantwortliche machen die Teilnahme an
-diesem Projekt für alle zu einer belästigungsfreien Erfahrung — unabhängig von
-Alter, Körpergröße, sichtbarer oder unsichtbarer Behinderung, ethnischer
-Zugehörigkeit, Geschlechtsmerkmalen, Geschlechtsidentität und -ausdruck,
-Erfahrungsgrad, Ausbildung, sozialem Status, Nationalität, persönlichem
-Erscheinungsbild, Herkunft, Religion oder sexueller Identität und
-Orientierung.
+We as members, contributors and maintainers make participation in this project
+a harassment-free experience for everyone — regardless of age, body size,
+visible or invisible disability, ethnicity, sex characteristics, gender
+identity and expression, level of experience, education, socio-economic status,
+nationality, personal appearance, race, religion, or sexual identity and
+orientation.
 
-## Unsere Standards
+## Our standards
 
-Zu einem freundlichen Umgang gehört:
+Behaviour that contributes to a friendly environment:
 
-- Rücksicht und Respekt gegenüber anderen
-- konstruktive Kritik annehmen und geben
-- Verantwortung übernehmen, wenn man einen Fehler gemacht hat
-- das Beste für das Projekt im Blick behalten, nicht nur für sich selbst
+- Being considerate and respectful of others
+- Giving and gracefully accepting constructive criticism
+- Taking responsibility when you have made a mistake
+- Focusing on what is best for the project, not just for yourself
 
-Nicht akzeptabel ist:
+Unacceptable behaviour includes:
 
-- sexualisierte Sprache, Bilder oder Annäherungsversuche
-- Beleidigungen, herabwürdigende Kommentare, persönliche oder politische
-  Angriffe
-- Belästigung, öffentlich oder privat
-- das Veröffentlichen privater Informationen anderer ohne deren ausdrückliche
-  Erlaubnis
+- Sexualised language or imagery, and unwelcome advances
+- Insults, derogatory comments, personal or political attacks
+- Harassment, public or private
+- Publishing others' private information without their explicit permission
 
-## Durchsetzung
+## Enforcement
 
-Verantwortliche des Projekts klären, was als unangemessen gilt, und ergreifen
-angemessene und faire Maßnahmen — von der Verwarnung bis zum dauerhaften
-Ausschluss. Sie können Kommentare, Commits, Code, Issues und andere Beiträge
-entfernen oder ablehnen, die diesem Kodex widersprechen, und begründen das
-auf Nachfrage.
+Project maintainers clarify what counts as inappropriate and take appropriate
+and fair action — from a warning to a permanent ban. They may remove or reject
+comments, commits, code, issues and other contributions that conflict with this
+Code of Conduct, and will explain that decision when asked.
 
-## Geltungsbereich
+## Scope
 
-Dieser Kodex gilt in allen Projektbereichen und auch dann, wenn jemand das
-Projekt öffentlich vertritt.
+This Code applies in all project spaces, and also when someone is representing
+the project in public.
 
-## Meldung
+## Reporting
 
-Vorfälle können vertraulich über GitHub gemeldet werden:
+Incidents can be reported confidentially through GitHub:
 
-> Reiter **Security** → **Report a vulnerability**
+> **Security** tab → **Report a vulnerability**
 
-Dieser Kanal ist privat und eignet sich auch für Meldungen, die keine
-technische Schwachstelle betreffen. Alle Meldungen werden vertraulich
-behandelt.
+That channel is private and is also suitable for reports that are not a
+technical vulnerability. All reports are handled confidentially.
 
-## Grundlage
+## Attribution
 
-Dieser Kodex beruht auf dem
-[Contributor Covenant](https://www.contributor-covenant.org/de/version/2/1/code_of_conduct/),
-Version 2.1.
+This Code of Conduct is adapted from the
+[Contributor Covenant](https://www.contributor-covenant.org/version/2/1/code_of_conduct/),
+version 2.1.

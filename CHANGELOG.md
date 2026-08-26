@@ -1,49 +1,50 @@
 # Changelog
 
-Alle nennenswerten Änderungen an diesem Projekt. Format nach
-[Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionierung nach
-[Semantic Versioning](https://semver.org/lang/de/).
+All notable changes to this project. Format based on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows
+[Semantic Versioning](https://semver.org/).
 
-## [Unveröffentlicht]
+## [Unreleased]
 
 ## [0.1.0] – 2026-08-26
 
-Erste Veröffentlichung.
+First release.
 
-### Hinzugefügt
+### Added
 
-- MCP-Server mit fünf Tools: `abfuhrtermine` (Adresse → Termine),
+- MCP server with five tools: `abfuhrtermine` (address → collection dates),
   `finde_traeger`, `traeger_details`, `abfuhrtermine_fuer_traeger`,
-  `abdeckung`; dazu die Ressource `abfall://traeger`.
-- Transporte stdio (Standard) und Streamable HTTP (`--http`).
-- Registry mit **995 Entsorgungsträgern** aus 150 Quellmodulen, gebaut aus
+  `abdeckung`; plus the resource `abfall://traeger`.
+- stdio (default) and Streamable HTTP (`--http`) transports.
+- Registry of **995 waste authorities** from 150 source modules, built from
   [hacs_waste_collection_schedule](https://github.com/mampfes/hacs_waste_collection_schedule).
-- Ortssuche mit deutschem Stemming: „Bremen" findet die „Bremer
-  Stadtreinigung", „Nürnberg" die „Nürnberger Land".
-- Adressauflösung über Nominatim mit Vergröberungskette, PLZ- und
-  Ortsvalidierung.
-- Generische Argumentauflösung über die Vorschlagslisten, die die Quellmodule
-  in ihren Exceptions mitführen — deckt rund 320 Träger ohne eigenen Code ab.
-- Eigene Adressdialoge für Träger mit internen Kennungen: Abfall.IO
-  (41 Träger), Stadtreinigung Hamburg (`hnId`), Berliner
+- Location search with German stemming: "Bremen" finds "Bremer Stadtreinigung",
+  "Nürnberg" finds "Nürnberger Land".
+- Address resolution via Nominatim with a coarsening chain, postcode and place
+  validation.
+- Generic argument resolution through the suggestion lists that the source
+  modules carry in their exceptions — covers around 320 authorities without
+  any dedicated code.
+- Dedicated address dialogs for authorities with internal identifiers:
+  Abfall.IO (41 authorities), Stadtreinigung Hamburg (`hnId`), Berliner
   Stadtreinigungsbetriebe (`schedule_id`).
-- Abgleich abgekürzter Straßennamen („Bahnhofstr." ↔ „Bahnhofstraße") und
-  Hausnummernbereiche inklusive Straßenseiten-Parität („5" liegt in „1-9",
-  nicht in „2-8").
-- `scripts/smoke.py` misst die Abdeckung gegen die echten Portale, statt sie
-  zu behaupten.
+- Matching of abbreviated street names ("Bahnhofstr." ↔ "Bahnhofstraße") and
+  house number ranges including street-side parity ("5" is in "1-9", not in
+  "2-8").
+- `scripts/smoke.py` measures coverage against the real portals instead of
+  asserting it.
 
-### Verhalten
+### Behaviour
 
-- Ist eine Angabe nicht zweifelsfrei bestimmbar, liefert der Server
-  `status: "rueckfrage"` mit konkreter Auswahlliste, statt zu raten. Ein
-  falsch geratener Ort liefert klaglos den Kalender der Nachbargemeinde —
-  ein falsches Ergebnis, das wie ein richtiges aussieht.
-- Eine leere Terminliste wird als `status: "leer"` gemeldet, nicht als
-  „keine Abfuhr": mehrere Portale antworten auf falsche Argumente nicht mit
-  einem Fehler, sondern mit einer leeren Liste.
-- Ein Träger wird nur ungefragt abgefragt, wenn er hinreichend sicher zur
-  Adresse passt (`MIN_AUTO_FETCH`).
+- When a value cannot be determined unambiguously, the server returns
+  `status: "rueckfrage"` with a concrete list of options instead of guessing. A
+  wrongly guessed town cheerfully returns the neighbouring municipality's
+  calendar — a wrong answer that looks like a right one.
+- An empty list of collections is reported as `status: "leer"`, not as "no
+  collection": several portals answer invalid arguments with an empty list
+  rather than an error.
+- An authority is only queried unasked when it matches the address confidently
+  enough (`MIN_AUTO_FETCH`).
 
-[Unveröffentlicht]: https://github.com/AlpayC/mcp-abfall/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/AlpayC/mcp-abfall/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/AlpayC/mcp-abfall/releases/tag/v0.1.0

@@ -1,43 +1,42 @@
-# Sicherheit
+# Security
 
-## Unterstützte Versionen
+## Supported versions
 
-Gepflegt wird jeweils die neueste veröffentlichte Version.
+The most recent released version is maintained.
 
-| Version | Unterstützt |
+| Version | Supported |
 |---|---|
-| 0.1.x | ja |
+| 0.1.x | yes |
 
-## Eine Schwachstelle melden
+## Reporting a vulnerability
 
-Bitte **kein öffentliches Issue** dafür anlegen. Nutze stattdessen die private
-Meldung über GitHub:
+Please do **not** open a public issue for it. Use GitHub's private reporting
+instead:
 
-> Reiter **Security** → **Report a vulnerability**
+> **Security** tab → **Report a vulnerability**
 
-Hilfreich sind: was passiert, wie es sich reproduzieren lässt, und welche
-Auswirkung du siehst. Eine Rückmeldung kommt, sobald ich dazu komme — das ist
-ein Freizeitprojekt, kein Produkt mit Bereitschaftsdienst.
+Helpful: what happens, how to reproduce it, and what impact you see. You will
+get a reply as soon as I get to it — this is a spare-time project, not a
+product with an on-call rotation.
 
-## Was dieser Server tut
+## What this server does
 
-Für die Einschätzung von Meldungen ist der Zuschnitt wichtig:
+Relevant context for assessing reports:
 
-- Der Server **ruft fremde Portale ab** — die der Entsorgungsträger — und
-  [Nominatim](https://nominatim.openstreetmap.org/) für die Adressauflösung.
-  Deren Antworten sind nicht vertrauenswürdig und werden geparst.
-- Er **verarbeitet Adressen**. Das sind personenbezogene Daten. Sie gehen an
-  Nominatim und an das jeweilige Portal, weil es ohne sie keine Abfuhrtermine
-  gibt. Aufgeloeste Adressen liegen zwischengespeichert unter
-  `~/.cache/mcp-abfall/` bzw. dem in `MCP_ABFALL_CACHE_DIR` gesetzten Pfad.
-- Er **hält keine Zugangsdaten** und braucht keine.
-- Die Ausführung von Quellmodulen aus dem Submodule ist bewusst: es ist die
-  Datenbasis. Wer dem Submodule nicht traut, sollte das Projekt nicht
-  einsetzen.
+- The server **calls third-party portals** — those of the waste authorities —
+  and [Nominatim](https://nominatim.openstreetmap.org/) for address
+  resolution. Their responses are untrusted and get parsed.
+- It **processes addresses**. Those are personal data. They go to Nominatim and
+  to the respective portal, because there are no collection dates without them.
+  Resolved addresses are cached under `~/.cache/mcp-abfall/`, or under the path
+  set in `MCP_ABFALL_CACHE_DIR`.
+- It **holds no credentials** and needs none.
+- Executing source modules from the submodule is intentional: it is the data
+  source. Anyone who does not trust the submodule should not run this project.
 
-## HTTP-Betrieb
+## HTTP mode
 
-`--http` bindet standardmäßig auf `127.0.0.1` und hat **keine
-Authentifizierung**. Wer den Server über die eigene Maschine hinaus
-erreichbar macht, muss selbst für Zugriffsschutz sorgen — und dabei bedenken,
-dass jede Anfrage die Portale der Träger und Nominatim belastet.
+`--http` binds to `127.0.0.1` by default and has **no authentication**. Anyone
+exposing the server beyond their own machine has to provide access control
+themselves — and should keep in mind that every request puts load on the
+authorities' portals and on Nominatim.

@@ -1,9 +1,13 @@
-# Mitarbeiten
+# Contributing
 
-Danke für dein Interesse. Der häufigste und nützlichste Beitrag ist ein
-Hinweis darauf, dass ein Träger nicht funktioniert — dazu gleich mehr.
+Thanks for your interest. The most common and most useful contribution is a
+report that some waste authority does not work — more on that below.
 
-## Einrichten
+Documentation is in English; the domain code is in German, because the domain
+is (see *Style*). A German README is available at
+[README.de.md](README.de.md).
+
+## Setup
 
 ```bash
 git clone --recurse-submodules https://github.com/AlpayC/mcp-abfall.git
@@ -13,90 +17,92 @@ uv run python scripts/build_registry.py
 uv run pytest
 ```
 
-Ohne `--recurse-submodules` fehlt die Datenbasis unter `vendor/`; dann hilft
-`git submodule update --init --depth 1`.
+Without `--recurse-submodules` the data source under `vendor/` is missing;
+`git submodule update --init --depth 1` fixes that.
 
-## Vor jedem Pull Request
+## Before every pull request
 
 ```bash
 uv run ruff check src scripts tests
 uv run pytest
 ```
 
-Wenn du am Submodule oder am Registry-Builder etwas änderst, gehört die
-neu gebaute `data/providers.json` mit in denselben Commit. Die CI prüft das:
-sie baut die Registry nach und schlägt fehl, wenn das Ergebnis abweicht.
+If you change the submodule or the registry builder, the rebuilt
+`data/providers.json` belongs in the same commit. CI checks this: it rebuilds
+the registry and fails if the result differs.
 
-## Der Grundsatz dieses Projekts
+## The principle of this project
 
-**Im Zweifel nachfragen, nicht raten.**
+**When in doubt, ask — do not guess.**
 
-Ein falsch geratener Ort oder eine falsch geratene Straße liefert klaglos den
-Abfuhrkalender der Nachbargemeinde. Das ist ein falsches Ergebnis, das wie ein
-richtiges aussieht — der teuerste Fehler, den dieser Server machen kann, weil
-niemand ihn bemerkt. Deshalb:
+A wrongly guessed town or street will cheerfully return the neighbouring
+municipality's collection calendar. That is a wrong answer that looks like a
+right one — the most expensive mistake this server can make, because nobody
+notices it. Therefore:
 
-- Eine Zuordnung wird nur ungefragt übernommen, wenn sie sicher genug ist
+- An assignment is only accepted unasked if it is confident enough
   (`resolve.CONFIDENCE_THRESHOLD`, `server.MIN_AUTO_FETCH`).
-- Ist sie es nicht, geht die Auswahlliste an den Aufrufer zurück
+- If it is not, the list of options goes back to the caller
   (`status: "rueckfrage"`).
-- Eine leere Antwort eines Portals ist ein Verdachtsfall, kein Ergebnis.
+- An empty response from a portal is a suspicion, not a result.
 
-Wer diese Schwellen senken will, sollte einen Testfall mitliefern, der zeigt,
-dass dabei nichts Falsches durchrutscht.
+If you want to lower these thresholds, please bring a test case showing that
+nothing wrong slips through.
 
 ## Tests
 
-Die Tests laufen ohne Netz. Was in `tests/` steht, sind überwiegend
-Regressionen: jeder Fall dort ist ein Fehler, der einmal echten Schaden
-angerichtet hat — die Suche nach „Berlin" fand die Stadtreinigung Gießen, eine
-Emsdettener Adresse lieferte den Kalender von Meschede. Wenn du einen Fehler
-behebst, gehört der Fall dazu, mit einem Satz dazu, was schiefging.
+The tests run without network access. Most of what is in `tests/` are
+regressions: every case there is a bug that once did real damage — a search for
+"Berlin" found Stadtreinigung Gießen, an address in Emsdetten returned
+Meschede's calendar. When you fix a bug, the case belongs with it, plus one
+sentence on what went wrong.
 
-`scripts/smoke.py` geht dagegen an die echten Portale. Das ist kein Test,
-sondern eine Messung, und sie gehört nicht in die CI: fremde Server sind kein
-Prüfgegenstand, und jeder Lauf belastet sie. Bitte sparsam einsetzen.
+`scripts/smoke.py`, in contrast, talks to the real portals. That is not a test
+but a measurement, and it does not belong in CI: other people's servers are not
+a test subject, and every run puts load on them. Please use it sparingly.
 
-## Einen Träger ergänzen oder reparieren
+## Adding or fixing an authority
 
-Die Datenbasis kommt aus
+The data comes from
 [hacs_waste_collection_schedule](https://github.com/mampfes/hacs_waste_collection_schedule).
-Deshalb zuerst die Frage, wohin der Beitrag gehört:
+So the first question is where the contribution belongs:
 
-- **Der Träger fehlt ganz oder sein Portal hat sich geändert** → das gehört
-  stromaufwärts in das Upstream-Projekt. Davon profitieren alle, die es
-  nutzen, und wir bekommen es beim nächsten Submodule-Update automatisch.
-- **Der Träger ist vorhanden, aber die Adressauflösung greift nicht** → das
-  gehört hierher. Typisch: er verlangt eine interne Kennung
-  (`standort`, `idHouseNumber`, `streetnr`), die aus einer Adresse nicht
-  herzuleiten ist.
+- **The authority is missing entirely, or its portal changed** → that belongs
+  upstream in that project. Everyone using it benefits, and we get it
+  automatically with the next submodule update.
+- **The authority exists but address resolution does not reach it** → that
+  belongs here. Typically it requires an internal identifier (`standort`,
+  `idHouseNumber`, `streetnr`) that cannot be derived from an address.
 
-Für den zweiten Fall gibt es das Muster in `src/mcp_abfall/lookup.py`: dort
-steht je Träger ein Auflöser, der dessen Adressdialog nachbaut. Alle haben
-dieselbe Form —
+For the second case, the pattern lives in `src/mcp_abfall/lookup.py`: one
+resolver per authority, reimplementing its address dialog. They all share the
+same shape —
 
 ```python
 def resolve_beispiel(default_args, address, picker, *, min_confidence, timeout):
     ...
-    return {"interne_id": wert}
+    return {"interne_id": value}
 ```
 
-`address` enthält `city`, `district`, `street` und `house_number`. Die Auswahl
-trifft nicht der Auflöser selbst, sondern `picker` (das ist
-`resolve.pick_suggestion`) — so gilt überall dieselbe Schwelle. Ist nichts
-eindeutig, wirft `_choose` ein `LookupNeedsChoice`, und die Liste geht an den
-Nutzer. Eintragen in `RESOLVERS`, fertig.
+`address` carries `city`, `district`, `street` and `house_number`. The choice
+is not made by the resolver itself but by `picker` (which is
+`resolve.pick_suggestion`) — that way the same threshold applies everywhere. If
+nothing is unambiguous, `_choose` raises `LookupNeedsChoice` and the list goes
+to the user. Register it in `RESOLVERS`, done.
 
-Als Vorlage taugen die Wizards des Upstreams unter
-`vendor/hacs_waste_collection_schedule/custom_components/waste_collection_schedule/waste_collection_schedule/wizard/`.
-Sie sind interaktiv gedacht, zeigen aber den Weg durch das Portal. Verlass dich
-nicht blind darauf: der Hamburger Wizard war beim Bau bereits veraltet, das
-Portal hatte umgestellt.
+The upstream wizards under
+`vendor/hacs_waste_collection_schedule/custom_components/waste_collection_schedule/waste_collection_schedule/wizard/`
+work as templates. They are meant to be interactive, but they show the path
+through a portal. Do not rely on them blindly: the Hamburg wizard was already
+stale when this was built, because the portal had moved on.
 
-## Stil
+## Style
 
-- Deutschsprachige Kommentare und Bezeichner in der Fachlogik, weil die Domäne
-  deutsch ist — `Traeger`, `Abfuhrtermine`, `Rueckfrage`.
-- Kommentare erklären das *Warum*, besonders bei allem, was nach einer
-  seltsamen Sonderbehandlung aussieht. Die meisten davon sind Narben.
-- `ruff` entscheidet über Formalien.
+- **Domain code is written in German** — `Traeger`, `Abfuhrtermine`,
+  `Rueckfrage` — because the domain is German and these terms have no clean
+  English equivalents. Match the surrounding code instead of introducing
+  English names. Umlauts are transliterated in code (`ae/oe/ue`) and spelled
+  out in user-facing strings.
+- Comments explain the *why*, especially for anything that looks like an odd
+  special case. Most of those are scars.
+- `ruff` decides the formalities.

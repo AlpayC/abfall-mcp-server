@@ -1,45 +1,45 @@
 # mcp-abfall
 
+*English · [Deutsch](README.de.md)*
+
 [![CI](https://github.com/AlpayC/mcp-abfall/actions/workflows/ci.yml/badge.svg)](https://github.com/AlpayC/mcp-abfall/actions/workflows/ci.yml)
-[![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
-[![Träger: 995](https://img.shields.io/badge/Entsorgungstr%C3%A4ger-995-green.svg)](data/providers.json)
+[![Providers: 995](https://img.shields.io/badge/waste%20authorities-995-green.svg)](data/providers.json)
 
-MCP-Server für die Abfall- und Umweltkalender deutscher Städte und Landkreise.
-Fragt Abfuhrtermine (Restmüll, Biotonne, Papier, Gelber Sack, Sperrmüll,
-Schadstoffmobil …) zu einer Adresse ab.
+MCP server for the waste collection calendars of German cities and districts.
+Looks up collection dates — residual waste, organic waste, paper, packaging,
+bulky waste, hazardous waste collection points — for a given address.
 
 ```
-Adresse ──▶ Nominatim ──▶ Gemeinde + Landkreis ──▶ Trägersuche (995 Träger)
-                                                          │
-                          Abfuhrtermine ◀── Portal ◀── Argumente auflösen
+address ──▶ Nominatim ──▶ municipality + district ──▶ provider search (995)
+                                                              │
+                       collection dates ◀── portal ◀── resolve arguments
 ```
 
-## Warum das nicht trivial ist
+## Why this is not trivial
 
-Abfallwirtschaft ist in Deutschland kommunal organisiert. Es gibt **keine
-bundesweite Schnittstelle** — rund 400 öffentlich-rechtliche Entsorgungsträger
-betreiben je eigene Portale, hinter denen eine Handvoll Softwareplattformen
-steckt (Abfall.IO/AbfallPlus, AbfallNavi, Jumomind, AWIDO, C-Trace, Müllmax,
-dazu viele direkte ICS-Exporte).
+Waste management in Germany is organised municipally. There is **no nationwide
+API** — roughly 400 public waste authorities each run their own portal, backed
+by a handful of software platforms (Abfall.IO/AbfallPlus, AbfallNavi, Jumomind,
+AWIDO, C-Trace, Müllmax, plus many plain ICS exports).
 
-Dieser Server nutzt als Datenbasis
+This server uses
 [`mampfes/hacs_waste_collection_schedule`](https://github.com/mampfes/hacs_waste_collection_schedule)
-(MIT) — ein aktiv gepflegtes Projekt mit über 950 Quellmodulen. Dessen inneres
-Package ist Home-Assistant-unabhängig und wird hier als Git-Submodule
-eingebunden und angesteuert.
+(MIT) as its data source — an actively maintained project with over 950 source
+modules. Its inner package is independent of Home Assistant and is wired in
+here as a Git submodule.
 
-Die eigentliche Arbeit dieses Projekts liegt darin, aus einer *Adresse* den
-zuständigen Träger **und dessen interne Parameter** zu ermitteln. In Home
-Assistant klickt ein Mensch das einmalig zusammen; ein MCP-Server muss es selbst
-können.
+The actual work of this project is turning an *address* into the responsible
+waste authority **and its internal parameters**. In Home Assistant a human
+clicks that together once; an MCP server has to do it on its own.
 
 ## Installation
 
-Der Server läuft **aus einem Repository-Checkout**, nicht als installiertes
-Paket: er braucht die Datenbasis unter `vendor/` und die Registry unter
-`data/`, beide relativ zum Projektverzeichnis. Deshalb gibt es ihn auch nicht
-auf PyPI — ein Wheel wäre installierbar und trotzdem funktionsunfähig.
+The server runs **from a repository checkout**, not as an installed package: it
+needs the data source under `vendor/` and the registry under `data/`, both
+resolved relative to the project root. That is also why it is not on PyPI — a
+wheel would install cleanly and still not work.
 
 ```bash
 git clone --recurse-submodules https://github.com/AlpayC/mcp-abfall.git
@@ -48,145 +48,146 @@ uv sync
 uv run pytest
 ```
 
-`data/providers.json` liegt im Repository, der Server startet also sofort.
-Nach einem Submodule-Update baust du sie neu:
+`data/providers.json` is checked in, so the server starts right away. After a
+submodule update, rebuild it:
 
 ```bash
 uv run python scripts/build_registry.py
 ```
 
-## Einbinden
+## Wiring it up
 
-Lokal per stdio — in `claude_desktop_config.json` bzw. `.mcp.json`:
+Locally over stdio — in `claude_desktop_config.json` or `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "abfall": {
       "command": "uv",
-      "args": ["--directory", "/pfad/zu/mcp-abfall", "run", "mcp-abfall"]
+      "args": ["--directory", "/path/to/mcp-abfall", "run", "mcp-abfall"]
     }
   }
 }
 ```
 
-Als HTTP-Dienst:
+As an HTTP service:
 
 ```bash
 uv run mcp-abfall --http --host 127.0.0.1 --port 8000
 ```
 
-Beim HTTP-Betrieb sollte bedacht werden, dass jede Anfrage die Portale der
-Träger und Nominatim belastet. Für mehr als den Eigenbedarf gehört ein Cache
-davor und eine eigene Nominatim-Instanz dahinter
-(`MCP_ABFALL_NOMINATIM_URL`).
+Keep in mind that every HTTP request puts load on the authorities' portals and
+on Nominatim. For anything beyond personal use, put a cache in front and your
+own Nominatim instance behind it (`MCP_ABFALL_NOMINATIM_URL`).
 
 ## Tools
 
-| Tool | Zweck |
+Tool names and responses are German, because the domain and the users are.
+
+| Tool | Purpose |
 |---|---|
-| `abfuhrtermine` | Adresse rein, Termine raus. Der übliche Einstieg. |
-| `finde_traeger` | Träger nach Orts- oder Betriebsnamen suchen, ohne Geocoding. |
-| `traeger_details` | Welche Argumente erwartet ein Träger? |
-| `abfuhrtermine_fuer_traeger` | Gezielte Abfrage, u.a. für Antworten auf Rückfragen. |
-| `abdeckung` | Wie viele Träger und Datenquellen sind erfasst. |
+| `abfuhrtermine` | Address in, collection dates out. The usual entry point. |
+| `finde_traeger` | Search authorities by place or company name, no geocoding. |
+| `traeger_details` | Which arguments does an authority expect? |
+| `abfuhrtermine_fuer_traeger` | Targeted query, e.g. to answer a follow-up question. |
+| `abdeckung` | How many authorities and data sources are covered. |
 
-Ergänzend die Ressource `abfall://traeger` mit der vollständigen Trägerliste.
+Plus the resource `abfall://traeger` with the full list of authorities.
 
-### Rückfragen statt Raten
+### Asking beats guessing
 
-Kann eine Angabe nicht zweifelsfrei bestimmt werden, liefert der Server
-`status: "rueckfrage"` samt konkreter Auswahlliste statt zu raten. Das ist
-Absicht: ein falsch geratener Ort liefert klaglos den Kalender der
-Nachbargemeinde — ein falsches Ergebnis, das wie ein richtiges aussieht.
+When a value cannot be determined unambiguously, the server returns
+`status: "rueckfrage"` along with the concrete list of options instead of
+guessing. That is deliberate: a wrongly guessed town cheerfully returns the
+neighbouring municipality's calendar — a wrong answer that looks like a right
+one.
 
-## Abdeckung, gemessen
+## Coverage, measured
 
-`scripts/build_registry.py` erfasst **995 Entsorgungsträger** aus 150
-Quellmodulen.
+`scripts/build_registry.py` collects **995 waste authorities** from 150 source
+modules.
 
-`scripts/smoke.py` fragt echte Adressen gegen die echten Portale ab. Der Lauf
-über 21 Adressen quer durch Deutschland (Stand: Aug 2026):
+`scripts/smoke.py` queries real addresses against the real portals. A run over
+21 addresses across Germany (as of Aug 2026):
 
-| Ergebnis | Anteil |
+| Outcome | Share |
 |---|---|
-| Termine direkt geliefert | 48 % |
-| Rückfrage nach einer fehlenden Angabe | 14 % |
-| Kein Träger lieferte Termine | 38 % |
+| Collection dates returned directly | 48 % |
+| Follow-up question for a missing detail | 14 % |
+| No authority returned dates | 38 % |
 
-Das ist die ehrliche Zahl, keine Schätzung — und der Grund, sie hier zu nennen:
-„deckt alle deutschen Städte ab" stimmt für die *Trägerliste*, nicht für die
-vollautomatische Auflösung aus einer blanken Adresse.
+That is the measured number, not an estimate — and the reason to state it here:
+"covers every German city" is true of the *authority list*, not of fully
+automatic resolution from a bare address.
 
-### Träger mit eigener ID-Auflösung
+### Authorities with their own ID lookup
 
-Einige Portale verlangen interne Kennungen, die aus einer Adresse nicht
-herzuleiten sind. Für diese ist der Adressdialog in `lookup.py` nachgebaut:
+Some portals require internal identifiers that cannot be derived from an
+address. For these, the portal's address dialog is reimplemented in
+`lookup.py`:
 
-| Träger | Kennung | Umfang |
+| Authority | Identifier | Scope |
 |---|---|---|
-| Abfall.IO / AbfallPlus | `f_id_kommune`, `f_id_strasse`, … | 41 Träger |
+| Abfall.IO / AbfallPlus | `f_id_kommune`, `f_id_strasse`, … | 41 authorities |
 | Stadtreinigung Hamburg | `hnId` | Hamburg |
 | Berliner Stadtreinigungsbetriebe | `schedule_id` | Berlin |
 
-Bei Hamburg ist der Upstream-Wizard inzwischen veraltet — das Portal hat das
-Formular auf eine JavaScript-Komponente umgestellt, deren Adress-Endpunkt
-hier aus der Seite gelesen wird.
+The upstream wizard for Hamburg is stale by now — the portal moved its form to
+a JavaScript component, whose address endpoint is read out of the page here.
 
-### Woran die restlichen Fälle scheitern
+### Where the remaining cases fail
 
-* **Weitere ID-Argumente** ohne Nachschlagepfad: `standort` in Dresden,
-  `idHouseNumber` in Leipzig, `streetnr` in Stuttgart. Je ein Auflöser mehr,
-  nach demselben Muster wie die drei oben.
-* **Portale, die abweichende Schreibweisen führen** und keine Vorschlagsliste
-  mitliefern (Erfurt, Kiel).
-* **Ausfälle, Ratenbegrenzung und kaputte Antworten** auf Seiten der Träger
-  (Saarbrücken liefert HTML statt ICS).
+* **Further ID arguments** with no lookup path: `standort` in Dresden,
+  `idHouseNumber` in Leipzig, `streetnr` in Stuttgart. One more resolver each,
+  following the same pattern as the three above.
+* **Portals using different spellings** that ship no list of suggestions
+  (Erfurt, Kiel).
+* **Outages, rate limiting and malformed responses** on the authorities' side
+  (Saarbrücken returns HTML instead of ICS).
 
-## Aufbau
+## Layout
 
-| Datei | Aufgabe |
+| File | Responsibility |
 |---|---|
-| `wcs.py` | Brücke zur vendorierten Bibliothek; registriert das Package gezielt, statt es auf den `sys.path` zu legen (das Elternverzeichnis enthält ein `calendar.py`, das die stdlib überschattet). |
-| `registry.py` | Trägerliste und Ortssuche mit deutschem Stemming. |
-| `geo.py` | Nominatim-Anbindung, Adressvarianten, Plausibilitätsprüfungen. |
-| `resolve.py` | Adresse → Träger → aufgelöste Argumente → Termine. |
-| `lookup.py` | Adressdialoge der Träger mit internen IDs (Abfall.IO, Hamburg, BSR). |
-| `server.py` | MCP-Tools, stdio und HTTP. |
+| `wcs.py` | Bridge to the vendored library; registers the package deliberately instead of putting it on `sys.path` (its parent directory holds a `calendar.py` that shadows the stdlib). |
+| `registry.py` | Authority list and location search with German stemming. |
+| `geo.py` | Nominatim, address variants, plausibility checks. |
+| `resolve.py` | Address → authority → resolved arguments → collection dates. |
+| `lookup.py` | Address dialogs for authorities with internal IDs (Abfall.IO, Hamburg, BSR). |
+| `server.py` | MCP tools, stdio and HTTP. |
 
-Die Registry wird nicht zur Laufzeit gebaut: `data/providers.json` entsteht
-per Skript, damit der Serverstart nicht 150 Module importieren muss. Nach einem
-Submodule-Update lohnt ein erneuter Lauf.
+The registry is not built at runtime: `data/providers.json` is produced by a
+script so that starting the server does not import 150 modules. Rebuild it
+after a submodule update.
 
-## Datenquellen und Nutzung
+## Data sources and usage
 
-Die Termine stammen von den Portalen der jeweiligen Entsorgungsträger, die
-Adressauflösung von [Nominatim](https://nominatim.openstreetmap.org/)
-(OpenStreetMap). Für Nominatim gilt eine Nutzungsrichtlinie — höchstens eine
-Anfrage pro Sekunde; der Server hält sie ein und legt Ergebnisse in
-`~/.cache/mcp-abfall/` ab.
+Collection dates come from the portals of the respective waste authorities,
+address resolution from [Nominatim](https://nominatim.openstreetmap.org/)
+(OpenStreetMap). Nominatim has a usage policy — at most one request per second;
+the server honours it and caches results in `~/.cache/mcp-abfall/`.
 
-Bei Terminen, an denen etwas hängt (Sperrmüll, Schadstoffmobil), lohnt der
-Blick auf die Portaladresse, die jede Antwort mitliefert.
+For dates something depends on (bulky waste, hazardous waste collection), it is
+worth checking the portal address that every response carries.
 
-## Mitarbeiten
+## Contributing
 
-Der nützlichste Beitrag ist ein Hinweis darauf, dass ein Träger nicht
-funktioniert — dafür gibt es eine
-[Issue-Vorlage](.github/ISSUE_TEMPLATE/traeger.yml) mit den richtigen Fragen.
-Wie man einen Träger-Auflöser ergänzt, steht in
-[CONTRIBUTING.md](CONTRIBUTING.md); Sicherheitsmeldungen gehören vertraulich
-gemeldet, siehe [SECURITY.md](SECURITY.md). Änderungen stehen im
-[CHANGELOG](CHANGELOG.md).
+The most useful contribution is a report that some authority does not work —
+there is an [issue template](.github/ISSUE_TEMPLATE/provider.yml) with the
+right questions. How to add an authority resolver is in
+[CONTRIBUTING.md](CONTRIBUTING.md); security issues belong in a private report,
+see [SECURITY.md](SECURITY.md). Changes are listed in the
+[CHANGELOG](CHANGELOG.md). Agents working on this repository should read
+[AGENTS.md](AGENTS.md).
 
-Ein Grundsatz zieht sich durch das ganze Projekt und gilt auch für Beiträge:
-**im Zweifel nachfragen, nicht raten.** Ein falsch geratener Ort liefert
-klaglos den Kalender der Nachbargemeinde — ein falsches Ergebnis, das wie ein
-richtiges aussieht.
+One principle runs through the whole project and applies to contributions too:
+**when in doubt, ask — do not guess.** A wrongly guessed town cheerfully
+returns the neighbouring municipality's calendar — a wrong answer that looks
+like a right one.
 
-## Lizenz
+## License
 
-MIT, siehe [LICENSE](LICENSE). Das Submodule
-`vendor/hacs_waste_collection_schedule` steht unter eigener MIT-Lizenz,
-Copyright (c) 2020 Steffen Zimmermann — dieses Repository referenziert es nur,
-es liefert den Code nicht mit.
+MIT, see [LICENSE](LICENSE). The submodule
+`vendor/hacs_waste_collection_schedule` is under its own MIT license,
+Copyright (c) 2020 Steffen Zimmermann — this repository only references it, it
+does not ship the code.
