@@ -1,0 +1,90 @@
+name: Datenbasis aktualisieren
+
+# Holt den neuesten Stand von hacs_waste_collection_schedule, baut die Registry
+# neu und oeffnet bei Aenderungen einen Pull Request.
+#
+# Warum ein eigener Workflow und nicht Dependabot: ein Submodule-Bump allein
+# ergibt hier keinen gueltigen Zustand. data/providers.json ist aus dem
+# Submodule erzeugt und muss im selben Commit mitwandern, sonst schlaegt die
+# CI-Pruefung fehl. Dependabot kann das nicht - es kennt den Buildschritt nicht.
+
+on:
+  schedule:
+    # Montags morgens. Der Upstream veroeffentlicht laufend; woechentlich
+    # reicht, damit neue Traeger ankommen, ohne den Betrieb zu fluten.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 1
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --locked
+
+      - name: Traegerzahl vorher merken
+        run: |
+          zahl=$(uv run python -c "import json; print(json.load(open('data/providers.json', encoding='utf-8'))['count'])")
+          echo "vorher=$zahl" >> "$GITHUB_ENV"
+
+      - name: Submodule auf den neuesten Stand bringen
+        run: |
+          git submodule update --remote --depth 1 vendor/hacs_waste_collection_schedule
+          cd vendor/hacs_waste_collection_schedule
+          echo "upstream=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Registry neu bauen
+        run: uv run python scripts/build_registry.py
+
+      - name: Traegerzahl nachher
+        run: |
+          zahl=$(uv run python -c "import json; print(json.load(open('data/providers.json', encoding='utf-8'))['count'])")
+          echo "nachher=$zahl" >> "$GITHUB_ENV"
+
+      # Die Tests laufen hier mit, damit kein Pull Request entsteht, der schon
+      # beim Oeffnen rot ist - etwa weil der Upstream ein Quellmodul umbenannt
+      # oder eine Argumentsignatur geaendert hat.
+      - name: Tests gegen den neuen Stand
+        id: tests
+        continue-on-error: true
+        run: uv run pytest
+
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: datenbasis/aktualisierung
+          title: "Datenbasis aktualisieren (${{ env.vorher }} → ${{ env.nachher }} Träger)"
+          commit-message: |
+            Datenbasis aktualisieren
+
+            Submodule auf ${{ env.upstream }}, Registry neu gebaut.
+            Träger: ${{ env.vorher }} → ${{ env.nachher }}.
+          body: |
+            Automatischer Lauf: Submodule auf `${{ env.upstream }}` gehoben und
+            `data/providers.json` neu gebaut.
+
+            | | Träger |
+            |---|---|
+            | vorher | ${{ env.vorher }} |
+            | nachher | ${{ env.nachher }} |
+
+            Tests: **${{ steps.tests.outcome }}**
+
+            Bei `failure` bitte vor dem Merge nachsehen — meist hat der Upstream
+            ein Quellmodul umbenannt oder eine Argumentsignatur geändert.
+
+            Ein Rückgang der Trägerzahl ist erklärungsbedürftig: entweder wurde
+            upstream etwas entfernt, oder die Länderzuordnung greift nicht mehr.
+          labels: datenbasis
+          delete-branch: true

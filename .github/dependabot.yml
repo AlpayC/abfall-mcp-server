@@ -1,0 +1,31 @@
+version: 2
+
+# Das Git-Submodule unter vendor/ steht bewusst nicht hier drin, obwohl
+# Dependabot das koennte. Ein Bump allein ergaebe keinen gueltigen Zustand:
+# data/providers.json ist daraus erzeugt und muss im selben Commit mitwandern,
+# sonst schlaegt die CI-Pruefung fehl. Dafuer gibt es
+# .github/workflows/update-registry.yml, der beides zusammen erledigt.
+
+updates:
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # Patch- und Minor-Updates gesammelt, damit nicht jede Woche fuenf
+      # einzelne Pull Requests aufschlagen.
+      klein:
+        update-types: [minor, patch]
+    labels: [abhaengigkeiten]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: [abhaengigkeiten, ci]

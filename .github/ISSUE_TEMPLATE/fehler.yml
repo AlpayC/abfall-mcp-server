@@ -1,0 +1,66 @@
+name: Fehler im Server
+description: Abstürze, Installationsprobleme, MCP-Anbindung, Tools verhalten sich falsch.
+labels: [fehler]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Geht es darum, dass für eine bestimmte Adresse keine Termine kommen,
+        nimm bitte die Vorlage **Träger liefert keine Termine** — dort sind die
+        richtigen Fragen drin.
+
+  - type: textarea
+    id: was
+    attributes:
+      label: Was passiert, und was hattest du erwartet?
+    validations:
+      required: true
+
+  - type: textarea
+    id: schritte
+    attributes:
+      label: Wie lässt es sich nachstellen?
+      placeholder: |
+        1. uv run mcp-abfall
+        2. Tool `abfuhrtermine` mit …
+        3. …
+    validations:
+      required: true
+
+  - type: textarea
+    id: fehler
+    attributes:
+      label: Fehlermeldung oder Traceback
+      render: text
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "`uv run python -c 'import mcp_abfall; print(mcp_abfall.__version__)'` oder der Commit."
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: umgebung
+    attributes:
+      label: Betriebssystem und Python-Version
+      placeholder: "Windows 11, Python 3.13"
+    validations:
+      required: true
+
+  - type: input
+    id: client
+    attributes:
+      label: MCP-Client
+      description: Falls der Fehler über einen Client auftrat.
+      placeholder: "Claude Code / Claude Desktop / eigener Client / stdio direkt"
+
+  - type: checkboxes
+    id: submodule
+    attributes:
+      label: Vorab geprüft
+      options:
+        - label: "`git submodule update --init --depth 1` ist gelaufen, `vendor/` ist nicht leer"
+        - label: "`uv run python scripts/build_registry.py` ist gelaufen, `data/providers.json` existiert"

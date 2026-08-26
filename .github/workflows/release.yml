@@ -1,0 +1,89 @@
+name: Release
+
+# Ausgeloest durch einen Versions-Tag:
+#   git tag -a v0.1.0 -m "v0.1.0" && git push origin v0.1.0
+#
+# Bewusst ohne PyPI-Veroeffentlichung: das Paket laeuft nur aus einem
+# Repository-Checkout. Es loest die Datenbasis unter vendor/ und die Registry
+# unter data/ relativ zum Projektwurzelverzeichnis auf, und das Submodule
+# gehoert nicht in ein Distributionsarchiv. Ein Wheel auf PyPI waere installierbar
+# und trotzdem funktionsunfaehig - also gibt es hier ein Quell-Release.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Bereits existierender Tag, z.B. v0.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          submodules: true
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --locked
+
+      - name: Tag und Paketversion abgleichen
+        run: |
+          tag="${{ inputs.tag || github.ref_name }}"
+          version="v$(uv run python -c 'import mcp_abfall; print(mcp_abfall.__version__)')"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::Tag $tag passt nicht zur Paketversion $version."
+            exit 1
+          fi
+          echo "version=${version#v}" >> "$GITHUB_ENV"
+          echo "tag=$tag" >> "$GITHUB_ENV"
+
+      - name: Lint und Tests
+        run: |
+          uv run ruff check src scripts tests
+          uv run pytest
+
+      - name: Registry passt zum Submodule
+        run: |
+          uv run python scripts/build_registry.py
+          git diff --quiet -- data/providers.json \
+            || { echo "::error::Registry ist nicht aktuell."; exit 1; }
+
+      - name: Release-Text aus dem Changelog schneiden
+        run: |
+          # Die Datei wird direkt geschrieben statt ueber die Standardausgabe
+          # umgeleitet: der Changelog enthaelt Umlaute und Pfeile, und damit
+          # haenge die Ausgabe sonst an der Kodierung der Laufzeitumgebung.
+          python - <<'PY'
+          import os, pathlib, re
+          version = os.environ["version"]
+          text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+          # Abschnitt dieser Version bis zur naechsten Ueberschrift.
+          match = re.search(
+              rf"^## \[{re.escape(version)}\].*?$(.*?)(?=^## \[|\Z)",
+              text, re.M | re.S,
+          )
+          notes = (match.group(1) if match else "").strip()
+          pathlib.Path("release-notes.md").write_text(
+              notes or f"Siehe CHANGELOG.md fuer {version}.", encoding="utf-8"
+          )
+          PY
+          cat release-notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.tag }}
+          name: ${{ env.tag }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ contains(env.tag, '-') }}

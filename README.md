@@ -1,5 +1,10 @@
 # mcp-abfall
 
+[![CI](https://github.com/AlpayC/mcp-abfall/actions/workflows/ci.yml/badge.svg)](https://github.com/AlpayC/mcp-abfall/actions/workflows/ci.yml)
+[![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
+[![Träger: 995](https://img.shields.io/badge/Entsorgungstr%C3%A4ger-995-green.svg)](data/providers.json)
+
 MCP-Server für die Abfall- und Umweltkalender deutscher Städte und Landkreise.
 Fragt Abfuhrtermine (Restmüll, Biotonne, Papier, Gelber Sack, Sperrmüll,
 Schadstoffmobil …) zu einer Adresse ab.
@@ -31,12 +36,23 @@ können.
 
 ## Installation
 
+Der Server läuft **aus einem Repository-Checkout**, nicht als installiertes
+Paket: er braucht die Datenbasis unter `vendor/` und die Registry unter
+`data/`, beide relativ zum Projektverzeichnis. Deshalb gibt es ihn auch nicht
+auf PyPI — ein Wheel wäre installierbar und trotzdem funktionsunfähig.
+
 ```bash
-git clone <repo> && cd mcp-abfall
-git submodule update --init --depth 1
+git clone --recurse-submodules https://github.com/AlpayC/mcp-abfall.git
+cd mcp-abfall
 uv sync
-uv run python scripts/build_registry.py   # erzeugt data/providers.json
 uv run pytest
+```
+
+`data/providers.json` liegt im Repository, der Server startet also sofort.
+Nach einem Submodule-Update baust du sie neu:
+
+```bash
+uv run python scripts/build_registry.py
 ```
 
 ## Einbinden
@@ -153,7 +169,24 @@ Anfrage pro Sekunde; der Server hält sie ein und legt Ergebnisse in
 Bei Terminen, an denen etwas hängt (Sperrmüll, Schadstoffmobil), lohnt der
 Blick auf die Portaladresse, die jede Antwort mitliefert.
 
+## Mitarbeiten
+
+Der nützlichste Beitrag ist ein Hinweis darauf, dass ein Träger nicht
+funktioniert — dafür gibt es eine
+[Issue-Vorlage](.github/ISSUE_TEMPLATE/traeger.yml) mit den richtigen Fragen.
+Wie man einen Träger-Auflöser ergänzt, steht in
+[CONTRIBUTING.md](CONTRIBUTING.md); Sicherheitsmeldungen gehören vertraulich
+gemeldet, siehe [SECURITY.md](SECURITY.md). Änderungen stehen im
+[CHANGELOG](CHANGELOG.md).
+
+Ein Grundsatz zieht sich durch das ganze Projekt und gilt auch für Beiträge:
+**im Zweifel nachfragen, nicht raten.** Ein falsch geratener Ort liefert
+klaglos den Kalender der Nachbargemeinde — ein falsches Ergebnis, das wie ein
+richtiges aussieht.
+
 ## Lizenz
 
-MIT. Das Submodule `vendor/hacs_waste_collection_schedule` steht unter eigener
-MIT-Lizenz, Copyright (c) 2020 Steffen Zimmermann.
+MIT, siehe [LICENSE](LICENSE). Das Submodule
+`vendor/hacs_waste_collection_schedule` steht unter eigener MIT-Lizenz,
+Copyright (c) 2020 Steffen Zimmermann — dieses Repository referenziert es nur,
+es liefert den Code nicht mit.

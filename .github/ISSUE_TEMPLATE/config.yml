@@ -1,0 +1,13 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Träger fehlt komplett oder Portal hat sich geändert
+    url: https://github.com/mampfes/hacs_waste_collection_schedule/issues
+    about: >
+      Von dort kommt die Datenbasis. Wird es dort ergänzt, kommt es hier beim
+      nächsten Update automatisch an - und alle anderen Projekte profitieren mit.
+  - name: Frage oder Idee
+    url: https://github.com/AlpayC/mcp-abfall/discussions
+    about: Für alles, was noch kein Fehlerbericht ist.
+  - name: Sicherheitslücke
+    url: https://github.com/AlpayC/mcp-abfall/security/advisories/new
+    about: Bitte vertraulich melden, nicht als öffentliches Issue.

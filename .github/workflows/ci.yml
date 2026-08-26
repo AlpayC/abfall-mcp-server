@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      # Ohne das Submodule fehlt die Datenbasis; die Tests importieren die
+      # Quellmodule. Flach geklont, es geht nur um den aktuellen Stand.
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 1
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python }}
+
+      - run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check src scripts tests
+
+      - name: Tests
+        run: uv run pytest
+
+  registry:
+    name: Registry passt zum Submodule
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 1
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --locked
+
+      # data/providers.json ist aus dem Submodule erzeugt und wird mitgeliefert,
+      # damit der Server ohne Buildschritt startet. Der Build ist deterministisch
+      # und braucht kein Netz, also laesst sich hier hart pruefen, dass die
+      # eingecheckte Datei zum eingecheckten Submodule-Stand passt.
+      - name: Registry neu bauen
+        run: uv run python scripts/build_registry.py
+
+      - name: Auf Abweichung pruefen
+        run: |
+          if ! git diff --quiet -- data/providers.json; then
+            echo "::error file=data/providers.json::Die Registry passt nicht zum Submodule-Stand. Bitte 'uv run python scripts/build_registry.py' ausfuehren und das Ergebnis mitcommitten."
+            git diff --stat -- data/providers.json
+            exit 1
+          fi
+          echo "Registry ist aktuell."

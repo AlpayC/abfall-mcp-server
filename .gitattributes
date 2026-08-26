@@ -1,0 +1,6 @@
+# Einheitliche Zeilenenden im Repository, unabhaengig vom Betriebssystem.
+* text=auto eol=lf
+
+# Erzeugt aus dem Submodule, nicht von Hand gepflegt: aus Diffs heraushalten
+# und nicht in die Sprachstatistik zaehlen.
+data/providers.json linguist-generated=true -diff
