@@ -194,6 +194,23 @@ def _coverage(q: set[str], text: str) -> float:
     return _COVERAGE_FLOOR + (1 - _COVERAGE_FLOOR) * (matched / len(cand))
 
 
+#: Ein Beispielteil, der auf eine Hausnummer endet, ist eine Adresse.
+_LOOKS_LIKE_ADDRESS = re.compile(r"\d+\s*[a-z]?$")
+
+
+def _is_address(part: str) -> bool:
+    """Ist dieser Beispielteil eine Strassenadresse statt eines Ortsnamens?
+
+    Viele Beispiele sind Testadressen ("Berliner Platz 5", "Zabelweg 1B").
+    Nach dem Entfernen der Stoppwoerter bleibt davon ein Wort uebrig, das
+    aussieht wie ein Ortsname - die Suche nach "Berlin" fand so die
+    Stadtreinigung Giessen. Der zugehoerige Ort steht, wenn ueberhaupt, in
+    einem eigenen Abschnitt ("Adam-Ries-Strasse 5, Erfurt") und bleibt
+    dadurch erhalten.
+    """
+    return bool(_LOOKS_LIKE_ADDRESS.search(normalize(part)))
+
+
 def _match_example(q: set[str], name: str) -> float:
     """Bewertet einen Beispielort.
 
@@ -205,7 +222,7 @@ def _match_example(q: set[str], name: str) -> float:
     """
     best = 0.0
     for part in (p.strip() for p in name.split(",")):
-        if part:
+        if part and not _is_address(part):
             best = max(best, _match(q, part) * _coverage(q, part))
     return best
 

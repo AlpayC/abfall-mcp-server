@@ -229,13 +229,25 @@ def abfuhrtermine(
         }
 
     fehler: list[dict] = []
+    rueckfrage: resolve.NeedsChoice | None = None
+
     for candidate in sicher:
         try:
             result = resolve.fetch_for_provider(
                 candidate.provider, resolution.place, user_args
             )
         except resolve.NeedsChoice as exc:
-            return _needs_choice_response(exc)
+            # Eine Rueckfrage ohne Auswahlmoeglichkeiten ist eine Sackgasse,
+            # keine Frage - der naechste Traeger bekommt seine Chance. Und
+            # selbst eine brauchbare Rueckfrage wird zurueckgestellt: liefert
+            # ein weiterer Traeger einfach die Termine, ist das die bessere
+            # Antwort. Genau daran scheiterte Berlin, wo ein Traeger mit
+            # passendem Namen die BSR verdraengte.
+            if exc.suggestions and rueckfrage is None:
+                rueckfrage = exc
+            elif not exc.suggestions:
+                fehler.append({"traeger": exc.provider.title, "meldung": str(exc)})
+            continue
         except resolve.ResolutionFailed as exc:
             fehler.append({"traeger": candidate.provider.title, "meldung": str(exc)})
             continue
@@ -271,6 +283,12 @@ def abfuhrtermine(
                 if c.provider.id != result.provider.id
             ][:3]
         return response
+
+    if rueckfrage is not None:
+        antwort = _needs_choice_response(rueckfrage)
+        if fehler:
+            antwort["uebersprungen"] = fehler
+        return antwort
 
     return {
         "status": "fehlgeschlagen",

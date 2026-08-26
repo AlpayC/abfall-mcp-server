@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import datetime as dt
 import difflib
+import functools
 import re
 from dataclasses import dataclass, field
 
@@ -235,7 +236,9 @@ def _house_number_matches(wanted: str, value: str) -> bool:
     return True
 
 
-def pick_suggestion(wanted: str | None, suggestions: list) -> tuple[str | None, float]:
+def pick_suggestion(
+    wanted: str | None, suggestions: list, postcode: str | None = None
+) -> tuple[str | None, float]:
     """Waehlt aus einer Vorschlagsliste den passenden Wert.
 
     Gibt zusaetzlich die Sicherheit zurueck; der Aufrufer entscheidet, ob sie
@@ -245,6 +248,16 @@ def pick_suggestion(wanted: str | None, suggestions: list) -> tuple[str | None, 
     if not suggestions:
         return None, 0.0
     values = [s if isinstance(s, str) else str(s) for s in suggestions]
+
+    # Fuehren die Vorschlaege eine Postleitzahl mit, entscheidet sie. Portale
+    # haengen sie genau deshalb an ("Marktstr. (10317)", "Marktstr. (13597)"):
+    # es ist die einzige Angabe, die zwei gleichnamige Strassen einer Stadt
+    # auseinanderhaelt.
+    if postcode:
+        passend = [v for v in values if postcode in v]
+        if passend and len(passend) < len(values):
+            values = passend
+
     # Eine einzige Moeglichkeit ist keine Wahl. Das ist der Normalfall bei
     # Traegern, die pro Strasse nur "Alle Hausnummern" anbieten.
     if len(values) == 1:
@@ -292,6 +305,20 @@ CONFIDENCE_THRESHOLD = 0.85
 MAX_ROUNDS = 8
 
 
+def _address_fields(place: geo.Place | None, user: dict) -> dict[str, str | None]:
+    """Die Adresse in den semantischen Feldern, die die Auflöser erwarten.
+
+    Nutzerangaben gehen vor: wer die Strasse ausdruecklich nennt, meint sie
+    auch, selbst wenn Nominatim etwas anderes gefunden hat.
+    """
+    return {
+        "city": user.get("city") or (place.city or place.municipality if place else None),
+        "district": user.get("district"),
+        "street": user.get("street") or (place.road if place else None),
+        "house_number": user.get("house_number") or (place.house_number if place else None),
+    }
+
+
 def _resolve_ids_if_needed(
     provider: Provider,
     args: dict,
@@ -299,31 +326,34 @@ def _resolve_ids_if_needed(
     user_args: dict,
     pinned: dict,
 ) -> tuple[dict, list[dict]]:
-    """Ersetzt geratene Klartextwerte in ID-Feldern durch echte IDs.
+    """Ersetzt interne ID-Argumente durch echte, nachgeschlagene Werte.
 
-    ``abfall_io`` verlangt Zahlen-IDs und meldet Klartext nicht als Fehler,
-    sondern liefert stillschweigend eine leere Terminliste - der teuerste
-    Fehlerfall ueberhaupt, weil er wie ein Ergebnis aussieht. Deshalb wird
-    hier vorab der Auswahldialog des Anbieters durchlaufen.
+    Betrifft die Traeger aus ``lookup.RESOLVERS``: sie verlangen Kennungen wie
+    ``f_id_kommune``, ``hnId`` oder ``schedule_id``, die aus einer Adresse
+    nicht herzuleiten sind. Schlimmer noch, ``abfall_io`` meldet Klartext
+    nicht als Fehler, sondern liefert stillschweigend eine leere Terminliste -
+    der teuerste Fehlerfall ueberhaupt, weil er wie ein Ergebnis aussieht.
+    Deshalb wird vorab der Adressdialog des jeweiligen Portals durchlaufen.
     """
-    steps = [s for s in lookup.STEPS if s in {spec.name for spec in provider.arg_specs}]
-    if not steps or not args.get("key"):
+    resolver = lookup.RESOLVERS.get(provider.source)
+    if resolver is None:
         return args, []
-    if all(str(args.get(s, "")).isdigit() for s in steps if s in args) and all(
-        s in args for s in steps if s in provider.open_args
-    ):
-        return args, []  # bereits IDs, nichts zu tun
 
-    wanted = {
-        step: (pinned.get(step) or _wanted_value(step, place, user_args) if place else pinned.get(step))
-        for step in lookup.STEPS
-    }
+    # Hat der Aufrufer die Pflicht-IDs schon mitgegeben, ist nichts zu tun.
+    pflicht = [spec.name for spec in provider.arg_specs if spec.required]
+    if pflicht and all(name in pinned for name in pflicht):
+        return args, []
+
+    address = _address_fields(place, user_args)
+    picker = functools.partial(
+        pick_suggestion, postcode=place.postcode if place else None
+    )
 
     try:
-        ids = lookup.resolve_ids(
-            str(args["key"]),
-            wanted,
-            pick_suggestion,
+        ids = resolver(
+            args,
+            address,
+            picker,
             min_confidence=CONFIDENCE_THRESHOLD,
         )
     except lookup.LookupNeedsChoice as exc:
@@ -349,7 +379,11 @@ def _resolve_ids_if_needed(
     merged.update(ids)
     merged.update(pinned)  # ausdrueckliche Nutzerangaben bleiben unangetastet
     trace = [
-        {"argument": name, "gewaehlt": value, "quelle": "Abfall.IO-Auswahldialog"}
+        {
+            "argument": name,
+            "gewaehlt": value,
+            "quelle": f"Adressdialog {provider.title}",
+        }
         for name, value in ids.items()
     ]
     return merged, trace
@@ -433,7 +467,9 @@ def fetch_for_provider(
             if wanted is None:
                 wanted = user_args.get(argument)
 
-            choice, confidence = pick_suggestion(wanted, suggestions)
+            choice, confidence = pick_suggestion(
+                wanted, suggestions, postcode=place.postcode if place else None
+            )
             if choice is None or confidence < CONFIDENCE_THRESHOLD:
                 raise NeedsChoice(
                     provider=provider,

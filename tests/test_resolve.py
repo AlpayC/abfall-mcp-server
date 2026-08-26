@@ -287,3 +287,36 @@ def test_postleitzahl_wird_nicht_als_hausnummer_gelesen():
 def test_strassenwort_gewinnt_bei_mehreren_kandidaten():
     strasse, _ = geo.parse_street("Haus 7, Bahnhofstraße 12, 12345 Musterstadt")
     assert strasse == "Bahnhofstraße"
+
+
+# --------------------------------------------------------------------------
+# Postleitzahl als Entscheidungshilfe
+# --------------------------------------------------------------------------
+
+
+def test_postleitzahl_entscheidet_bei_gleichnamigen_strassen():
+    """Regression: Berlin hat zwei Marktstrassen. Die Portale haengen die PLZ
+    genau deshalb an - ohne sie auszuwerten kam eine Rueckfrage, obwohl die
+    Adresse die PLZ mitbrachte."""
+    wert, sicherheit = resolve.pick_suggestion(
+        "Marktstr.",
+        ["Marktstr. 1, 13597 Berlin (Spandau)", "Marktstr. 1, 10317 Berlin (Lichtenberg)"],
+        postcode="10317",
+    )
+    assert wert == "Marktstr. 1, 10317 Berlin (Lichtenberg)"
+    assert sicherheit >= resolve.CONFIDENCE_THRESHOLD
+
+
+def test_postleitzahl_ohne_treffer_aendert_nichts():
+    """Passt die PLZ auf keinen Vorschlag, darf sie nicht alles wegfiltern."""
+    wert, _ = resolve.pick_suggestion(
+        "Ahlen", ["Ahlen", "Beckum"], postcode="99999"
+    )
+    assert wert == "Ahlen"
+
+
+def test_ohne_postleitzahl_wird_weiter_nachgefragt():
+    wert, sicherheit = resolve.pick_suggestion(
+        "Marktstr.", ["Marktstr. (13597)", "Marktstr. (10317)"]
+    )
+    assert wert is None or sicherheit < resolve.CONFIDENCE_THRESHOLD

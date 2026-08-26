@@ -150,3 +150,13 @@ def test_generischer_stadtteil_zieht_nicht_quer():
 
     place = geo.Place(query="x", display_name="x", city="Hamburg", district="Altstadt")
     assert [t for t, _ in place.search_terms()] == ["Hamburg"]
+
+
+def test_adressartige_beispiele_zaehlen_nicht_als_ort():
+    """Regression: der Beispielort "Berliner Platz 5" liess die Suche nach
+    "Berlin" die Stadtreinigung Giessen finden."""
+    assert registry._is_address("Berliner Platz 5")
+    assert registry._is_address("Zabelweg 1B")
+    assert not registry._is_address("Emsdetten")
+    assert not registry._is_address("Kreis Steinfurt")
+    assert top_title("Berlin") != "Stadtreinigung Gießen"

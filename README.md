@@ -90,28 +90,42 @@ Nachbargemeinde — ein falsches Ergebnis, das wie ein richtiges aussieht.
 Quellmodulen.
 
 `scripts/smoke.py` fragt echte Adressen gegen die echten Portale ab. Der Lauf
-über 18 Adressen quer durch Deutschland (Stand: Aug 2026):
+über 21 Adressen quer durch Deutschland (Stand: Aug 2026):
 
 | Ergebnis | Anteil |
 |---|---|
-| Termine direkt geliefert | 28 % |
-| Rückfrage nach einer fehlenden Angabe | 44 % |
-| Kein Träger lieferte Termine | 28 % |
+| Termine direkt geliefert | 48 % |
+| Rückfrage nach einer fehlenden Angabe | 14 % |
+| Kein Träger lieferte Termine | 38 % |
 
 Das ist die ehrliche Zahl, keine Schätzung — und der Grund, sie hier zu nennen:
 „deckt alle deutschen Städte ab" stimmt für die *Trägerliste*, nicht für die
 vollautomatische Auflösung aus einer blanken Adresse.
 
+### Träger mit eigener ID-Auflösung
+
+Einige Portale verlangen interne Kennungen, die aus einer Adresse nicht
+herzuleiten sind. Für diese ist der Adressdialog in `lookup.py` nachgebaut:
+
+| Träger | Kennung | Umfang |
+|---|---|---|
+| Abfall.IO / AbfallPlus | `f_id_kommune`, `f_id_strasse`, … | 41 Träger |
+| Stadtreinigung Hamburg | `hnId` | Hamburg |
+| Berliner Stadtreinigungsbetriebe | `schedule_id` | Berlin |
+
+Bei Hamburg ist der Upstream-Wizard inzwischen veraltet — das Portal hat das
+Formular auf eine JavaScript-Komponente umgestellt, deren Adress-Endpunkt
+hier aus der Seite gelesen wird.
+
 ### Woran die restlichen Fälle scheitern
 
-* **Technische ID-Argumente.** Manche Träger verlangen interne Kennungen
-  (`hnId` in Hamburg, `standort` in Dresden, `idHouseNumber` in Leipzig), für
-  die es keinen Nachschlagepfad im Klartext gibt. Für Abfall.IO — mit 41
-  Trägern der mit Abstand größte Fall — ist der Auswahldialog in
-  `lookup.py` nachgebaut; die übrigen sind Einzelfälle und je Modul zu ergänzen.
+* **Weitere ID-Argumente** ohne Nachschlagepfad: `standort` in Dresden,
+  `idHouseNumber` in Leipzig, `streetnr` in Stuttgart. Je ein Auflöser mehr,
+  nach demselben Muster wie die drei oben.
 * **Portale, die abweichende Schreibweisen führen** und keine Vorschlagsliste
-  mitliefern.
-* **Ausfälle und Ratenbegrenzung** auf Seiten der Träger.
+  mitliefern (Erfurt, Kiel).
+* **Ausfälle, Ratenbegrenzung und kaputte Antworten** auf Seiten der Träger
+  (Saarbrücken liefert HTML statt ICS).
 
 ## Aufbau
 
@@ -121,7 +135,7 @@ vollautomatische Auflösung aus einer blanken Adresse.
 | `registry.py` | Trägerliste und Ortssuche mit deutschem Stemming. |
 | `geo.py` | Nominatim-Anbindung, Adressvarianten, Plausibilitätsprüfungen. |
 | `resolve.py` | Adresse → Träger → aufgelöste Argumente → Termine. |
-| `lookup.py` | Auswahldialog für Abfall.IO (numerische Standort-IDs). |
+| `lookup.py` | Adressdialoge der Träger mit internen IDs (Abfall.IO, Hamburg, BSR). |
 | `server.py` | MCP-Tools, stdio und HTTP. |
 
 Die Registry wird nicht zur Laufzeit gebaut: `data/providers.json` entsteht

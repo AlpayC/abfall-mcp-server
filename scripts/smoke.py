@@ -42,6 +42,9 @@ ADRESSEN = [
     "Domplatz 1, 48143 Münster",
     "Marktplatz 1, 76133 Karlsruhe",
     "Bahnhofstraße 1, 90402 Nürnberg",
+    "Zabelweg 1B, 22459 Hamburg",
+    "Willy-Brandt-Straße 1, 10557 Berlin",
+    "Marktstr. 1, 10317 Berlin",
 ]
 
 
