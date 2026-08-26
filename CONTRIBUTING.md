@@ -96,6 +96,52 @@ work as templates. They are meant to be interactive, but they show the path
 through a portal. Do not rely on them blindly: the Hamburg wizard was already
 stale when this was built, because the portal had moved on.
 
+## Repository setup (maintainers)
+
+One-time steps after creating the repository, in this order:
+
+1. **Push, then let CI run once.** The status check names only appear in
+   GitHub's pickers after a first run.
+
+2. **Create the labels.** The issue templates, Dependabot and the data-source
+   workflow all assign labels, and GitHub silently drops unknown ones:
+
+   ```bash
+   bash scripts/setup-labels.sh
+   ```
+
+3. **Enable three settings** that the repository's own files rely on:
+
+   | Where | What | Needed for |
+   |---|---|---|
+   | General → Features | Discussions | `ISSUE_TEMPLATE/config.yml` links there |
+   | Advanced Security | Private vulnerability reporting | the only channel named in `SECURITY.md` |
+   | Actions → General | Allow GitHub Actions to create and approve pull requests | otherwise the data-source workflow fails at its last step |
+
+4. **Create `REGISTRY_PAT`** — a fine-grained personal access token for this
+   repository with `Contents: write` and `Pull requests: write`, stored as a
+   repository secret. Without it the weekly data-source pull request is opened
+   with the default token, which does not trigger CI (see the comment in
+   `.github/workflows/update-registry.yml`). With branch protection requiring
+   status checks, such a pull request can never be merged.
+
+5. **Protect `main`** with a ruleset: restrict deletions, block force pushes,
+   require a pull request (with **0** required approvals — you cannot approve
+   your own), require conversation resolution, and require these checks:
+
+   ```
+   Tests (Python 3.11)
+   Tests (Python 3.12)
+   Tests (Python 3.13)
+   Registry matches the submodule
+   ```
+
+   Add yourself as a bypass actor so a hotfix stays possible. Do not require
+   signed commits — that would block the workflows' automated commits.
+
+   Optionally a second ruleset for tags matching `v*` with deletions and force
+   pushes restricted, so a published release cannot be swapped out later.
+
 ## Style
 
 - **Domain code is written in German** — `Traeger`, `Abfuhrtermine`,

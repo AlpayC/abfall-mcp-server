@@ -61,8 +61,21 @@ jobs:
         continue-on-error: true
         run: uv run pytest
 
+      # The token matters here. GitHub does not start workflows for events
+      # caused by the default GITHUB_TOKEN - that is its recursion guard. A
+      # pull request opened with it therefore never triggers CI, and with
+      # required status checks on main it can never be merged: the checks stay
+      # pending forever.
+      #
+      # REGISTRY_PAT is a fine-grained personal access token for this
+      # repository with Contents: write and Pull requests: write. With it the
+      # pull request behaves like any other and CI runs. Without the secret
+      # this falls back to the default token: the workflow still opens its
+      # pull request, it just arrives without CI - the test result in the body
+      # is then the only signal.
       - uses: peter-evans/create-pull-request@v7
         with:
+          token: ${{ secrets.REGISTRY_PAT || github.token }}
           branch: data-source/update
           title: "Update data source (${{ env.before }} → ${{ env.after }} authorities)"
           commit-message: |
