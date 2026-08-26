@@ -1,0 +1,3 @@
+[submodule "vendor/hacs_waste_collection_schedule"]
+	path = vendor/hacs_waste_collection_schedule
+	url = https://github.com/mampfes/hacs_waste_collection_schedule.git
