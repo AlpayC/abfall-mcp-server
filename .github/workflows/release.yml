@@ -1,13 +1,13 @@
 name: Release
 
-# Ausgeloest durch einen Versions-Tag:
+# Triggered by a version tag:
 #   git tag -a v0.1.0 -m "v0.1.0" && git push origin v0.1.0
 #
-# Bewusst ohne PyPI-Veroeffentlichung: das Paket laeuft nur aus einem
-# Repository-Checkout. Es loest die Datenbasis unter vendor/ und die Registry
-# unter data/ relativ zum Projektwurzelverzeichnis auf, und das Submodule
-# gehoert nicht in ein Distributionsarchiv. Ein Wheel auf PyPI waere installierbar
-# und trotzdem funktionsunfaehig - also gibt es hier ein Quell-Release.
+# Deliberately without publishing to PyPI: the package only runs from a
+# repository checkout. It resolves the data source under vendor/ and the
+# registry under data/ relative to the project root, and the submodule does
+# not belong in a distribution archive. A wheel on PyPI would install cleanly
+# and still not work - hence a source release.
 
 on:
   push:
@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Bereits existierender Tag, z.B. v0.1.0"
+        description: "An existing tag, e.g. v0.1.0"
         required: true
 
 permissions:
@@ -37,45 +37,45 @@ jobs:
 
       - run: uv sync --locked
 
-      - name: Tag und Paketversion abgleichen
+      - name: Check tag against package version
         run: |
           tag="${{ inputs.tag || github.ref_name }}"
           version="v$(uv run python -c 'import mcp_abfall; print(mcp_abfall.__version__)')"
           if [ "$tag" != "$version" ]; then
-            echo "::error::Tag $tag passt nicht zur Paketversion $version."
+            echo "::error::Tag $tag does not match package version $version."
             exit 1
           fi
           echo "version=${version#v}" >> "$GITHUB_ENV"
           echo "tag=$tag" >> "$GITHUB_ENV"
 
-      - name: Lint und Tests
+      - name: Lint and tests
         run: |
           uv run ruff check src scripts tests
           uv run pytest
 
-      - name: Registry passt zum Submodule
+      - name: Registry matches the submodule
         run: |
           uv run python scripts/build_registry.py
           git diff --quiet -- data/providers.json \
-            || { echo "::error::Registry ist nicht aktuell."; exit 1; }
+            || { echo "::error::Registry is not up to date."; exit 1; }
 
-      - name: Release-Text aus dem Changelog schneiden
+      - name: Cut the release notes from the changelog
         run: |
-          # Die Datei wird direkt geschrieben statt ueber die Standardausgabe
-          # umgeleitet: der Changelog enthaelt Umlaute und Pfeile, und damit
-          # haenge die Ausgabe sonst an der Kodierung der Laufzeitumgebung.
+          # The file is written directly instead of redirecting stdout: the
+          # changelog contains umlauts and arrows, which would otherwise tie
+          # the output to the runtime's encoding.
           python - <<'PY'
           import os, pathlib, re
           version = os.environ["version"]
           text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
-          # Abschnitt dieser Version bis zur naechsten Ueberschrift.
+          # This version's section, up to the next heading.
           match = re.search(
               rf"^## \[{re.escape(version)}\].*?$(.*?)(?=^## \[|\Z)",
               text, re.M | re.S,
           )
           notes = (match.group(1) if match else "").strip()
           pathlib.Path("release-notes.md").write_text(
-              notes or f"Siehe CHANGELOG.md fuer {version}.", encoding="utf-8"
+              notes or f"See CHANGELOG.md for {version}.", encoding="utf-8"
           )
           PY
           cat release-notes.md

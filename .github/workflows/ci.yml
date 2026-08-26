@@ -22,8 +22,8 @@ jobs:
       matrix:
         python: ["3.11", "3.12", "3.13"]
     steps:
-      # Ohne das Submodule fehlt die Datenbasis; die Tests importieren die
-      # Quellmodule. Flach geklont, es geht nur um den aktuellen Stand.
+      # Without the submodule the data source is missing; the tests import
+      # the source modules. Shallow clone, only the current state matters.
       - uses: actions/checkout@v4
         with:
           submodules: true
@@ -43,7 +43,7 @@ jobs:
         run: uv run pytest
 
   registry:
-    name: Registry passt zum Submodule
+    name: Registry matches the submodule
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -57,18 +57,18 @@ jobs:
 
       - run: uv sync --locked
 
-      # data/providers.json ist aus dem Submodule erzeugt und wird mitgeliefert,
-      # damit der Server ohne Buildschritt startet. Der Build ist deterministisch
-      # und braucht kein Netz, also laesst sich hier hart pruefen, dass die
-      # eingecheckte Datei zum eingecheckten Submodule-Stand passt.
-      - name: Registry neu bauen
+      # data/providers.json is generated from the submodule and checked in so
+      # that the server starts without a build step. The build is deterministic
+      # and needs no network, so we can verify outright that the committed file
+      # matches the committed submodule state.
+      - name: Rebuild the registry
         run: uv run python scripts/build_registry.py
 
-      - name: Auf Abweichung pruefen
+      - name: Check for drift
         run: |
           if ! git diff --quiet -- data/providers.json; then
-            echo "::error file=data/providers.json::Die Registry passt nicht zum Submodule-Stand. Bitte 'uv run python scripts/build_registry.py' ausfuehren und das Ergebnis mitcommitten."
+            echo "::error file=data/providers.json::The registry does not match the submodule state. Please run 'uv run python scripts/build_registry.py' and commit the result."
             git diff --stat -- data/providers.json
             exit 1
           fi
-          echo "Registry ist aktuell."
+          echo "Registry is up to date."
