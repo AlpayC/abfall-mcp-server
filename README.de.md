@@ -197,4 +197,5 @@ richtiges aussieht.
 MIT, siehe [LICENSE](LICENSE). Das Submodule
 `vendor/hacs_waste_collection_schedule` steht unter eigener MIT-Lizenz,
 Copyright (c) 2020 Steffen Zimmermann — dieses Repository referenziert es nur,
-es liefert den Code nicht mit.
+es liefert den Code nicht mit. Die Nennungen Dritter stehen in
+[NOTICE](NOTICE).

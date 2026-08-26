@@ -1,0 +1,18 @@
+mcp-abfall
+Copyright (c) 2026 AlpayC
+Licensed under the MIT License, see LICENSE.
+
+This project references the following work as a Git submodule under vendor/:
+
+  hacs_waste_collection_schedule
+  https://github.com/mampfes/hacs_waste_collection_schedule
+  MIT License, Copyright (c) 2020 Steffen Zimmermann
+
+It is the data source for the waste authority registry. This repository only
+records a commit reference to it — the code itself is neither contained in nor
+distributed by this repository, and remains under its own license.
+
+Collection dates are retrieved at runtime from the portals of the respective
+German waste authorities. Address resolution uses Nominatim
+(https://nominatim.openstreetmap.org/), whose data is © OpenStreetMap
+contributors, available under the Open Database License.

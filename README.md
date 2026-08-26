@@ -190,4 +190,5 @@ like a right one.
 MIT, see [LICENSE](LICENSE). The submodule
 `vendor/hacs_waste_collection_schedule` is under its own MIT license,
 Copyright (c) 2020 Steffen Zimmermann — this repository only references it, it
-does not ship the code.
+does not ship the code. Third-party attributions are collected in
+[NOTICE](NOTICE).
