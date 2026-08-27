@@ -1,6 +1,6 @@
 from starlette.testclient import TestClient
 
-from abfall_mcp_server import server
+from abfall_mcp_server import __version__, server
 
 
 def test_healthcheck() -> None:
@@ -10,7 +10,9 @@ def test_healthcheck() -> None:
         response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "version": "0.1.0"}
+    # Gegen __version__ pruefen, nicht gegen eine feste Zahl: der Test soll
+    # die Form der Antwort sichern und nicht bei jedem Release brechen.
+    assert response.json() == {"status": "ok", "version": __version__}
 
 
 def test_landingpages_and_assets(monkeypatch, tmp_path) -> None:

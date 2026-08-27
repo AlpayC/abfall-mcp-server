@@ -6,6 +6,8 @@ All notable changes to this project. Format based on
 
 ## [Unreleased]
 
+## [0.2.0] – 2026-08-27
+
 ### Changed
 
 - **Renamed** from `mcp-abfall` to `abfall-mcp-server` — repository, package,
@@ -71,5 +73,6 @@ First release.
 - An authority is only queried unasked when it matches the address confidently
   enough (`MIN_AUTO_FETCH`).
 
-[Unreleased]: https://github.com/AlpayC/abfall-mcp-server/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/AlpayC/abfall-mcp-server/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/AlpayC/abfall-mcp-server/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/AlpayC/abfall-mcp-server/releases/tag/v0.1.0
