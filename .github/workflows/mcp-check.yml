@@ -1,0 +1,4 @@
+- uses: AlpayC/mcp-migration-check@v1
+  with:
+    source: https://abfall-mcp.alpaycelik.dev/mcp          # or: url: https://example.com/mcp
+    fail-on: critical  # critical (default) | warning | never
