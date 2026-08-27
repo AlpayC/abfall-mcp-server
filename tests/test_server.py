@@ -1,6 +1,6 @@
 from starlette.testclient import TestClient
 
-from mcp_abfall import server
+from abfall_mcp_server import server
 
 
 def test_healthcheck() -> None:
@@ -19,7 +19,7 @@ def test_landingpages_and_assets(monkeypatch, tmp_path) -> None:
     (tmp_path / "index.html").write_text("<h1>Abfall MCP</h1>", encoding="utf-8")
     (tmp_path / "en" / "index.html").write_text("<h1>Waste MCP</h1>", encoding="utf-8")
     (tmp_path / "_next" / "static" / "app.css").write_text("body{}", encoding="utf-8")
-    monkeypatch.setenv("MCP_ABFALL_WEB_DIR", str(tmp_path))
+    monkeypatch.setenv("ABFALL_MCP_WEB_DIR", str(tmp_path))
     app = server.mcp.streamable_http_app(stateless_http=True, host="0.0.0.0")
 
     with TestClient(app) as client:

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from mcp_abfall import lookup
+from abfall_mcp_server import lookup
 
 
 def test_traeger_mit_eigener_aufloesung():

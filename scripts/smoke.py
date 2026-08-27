@@ -76,7 +76,7 @@ def main() -> int:
     args = parser.parse_args()
 
     logging.disable(logging.CRITICAL)
-    from mcp_abfall import server
+    from abfall_mcp_server import server
 
     zaehler: Counter[str] = Counter()
     protokoll = []

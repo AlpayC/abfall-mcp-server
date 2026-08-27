@@ -7,7 +7,7 @@ Traeger heisst nach jeder Gemeinde, die er bedient.
 
 Nominatim ist ein Gemeinschaftsdienst mit einer Nutzungsrichtlinie: maximal
 eine Anfrage pro Sekunde, aussagekraeftiger User-Agent, Caching erwuenscht.
-Beides ist hier umgesetzt. Ueber ``MCP_ABFALL_NOMINATIM_URL`` laesst sich eine
+Beides ist hier umgesetzt. Ueber ``ABFALL_MCP_NOMINATIM_URL`` laesst sich eine
 eigene Instanz einsetzen, dann greift die Drosselung nicht.
 """
 
@@ -26,7 +26,7 @@ import requests
 from . import __version__
 
 DEFAULT_ENDPOINT = "https://nominatim.openstreetmap.org/search"
-USER_AGENT = f"mcp-abfall/{__version__} (+https://github.com/mampfes/hacs_waste_collection_schedule)"
+USER_AGENT = f"abfall-mcp-server/{__version__} (+https://github.com/mampfes/hacs_waste_collection_schedule)"
 
 #: Nominatims Nutzungsrichtlinie: hoechstens eine Anfrage pro Sekunde.
 _PUBLIC_MIN_INTERVAL = 1.0
@@ -215,8 +215,8 @@ class Place:
 
 
 def _cache_path() -> Path:
-    base = os.environ.get("MCP_ABFALL_CACHE_DIR")
-    root = Path(base) if base else Path.home() / ".cache" / "mcp-abfall"
+    base = os.environ.get("ABFALL_MCP_CACHE_DIR")
+    root = Path(base) if base else Path.home() / ".cache" / "abfall-mcp-server"
     root.mkdir(parents=True, exist_ok=True)
     return root / "geocode.json"
 
@@ -253,7 +253,7 @@ def _throttle(endpoint: str) -> None:
 
 
 def _query_nominatim(query: str, timeout: float) -> dict | None:
-    endpoint = os.environ.get("MCP_ABFALL_NOMINATIM_URL", DEFAULT_ENDPOINT)
+    endpoint = os.environ.get("ABFALL_MCP_NOMINATIM_URL", DEFAULT_ENDPOINT)
     _throttle(endpoint)
     try:
         resp = requests.get(

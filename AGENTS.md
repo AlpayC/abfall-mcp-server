@@ -18,8 +18,8 @@ uv sync
 uv run pytest                              # ~100 tests, run offline, under 1 s
 uv run ruff check src scripts tests        # lint; --fix clears most of it
 uv run python scripts/build_registry.py    # rebuild data/providers.json
-uv run mcp-abfall                          # server, stdio
-uv run mcp-abfall --http                   # server, HTTP on 127.0.0.1:8000
+uv run abfall-mcp-server                   # server, stdio
+uv run abfall-mcp-server --http            # server, HTTP on 127.0.0.1:8000
 ```
 
 `scripts/smoke.py` talks to the **real portals**. It is not a test but a
@@ -93,7 +93,7 @@ suggestion loop) → `wcs.fetch`.
 
 The most useful contribution. It concerns providers that require internal
 identifiers (`standort` in Dresden, `idHouseNumber` in Leipzig, `streetnr` in
-Stuttgart). Follow the pattern in `src/mcp_abfall/lookup.py`:
+Stuttgart). Follow the pattern in `src/abfall_mcp_server/lookup.py`:
 
 ```python
 def resolve_beispiel(default_args, address, picker, *, min_confidence, timeout):

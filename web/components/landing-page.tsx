@@ -30,8 +30,8 @@ type Language = "de" | "en";
 
 const ENDPOINT = "https://abfall-mcp.alpaycelik.dev/mcp";
 const HOST = "abfall-mcp.alpaycelik.dev";
-const REPO = "https://github.com/AlpayC/mcp-abfall";
-const SOURCE = `${REPO}/blob/main/src/mcp_abfall/server.py`;
+const REPO = "https://github.com/AlpayC/abfall-mcp-server";
+const SOURCE = `${REPO}/blob/main/src/abfall_mcp_server/server.py`;
 const VERSION = "v0.1.0";
 const PROTOCOL = "2025-11-25";
 const PROVIDERS = 995;
@@ -50,7 +50,7 @@ const snippets = {
   Claude: `claude mcp add --transport http abfall ${ENDPOINT}`,
   Codex: `codex mcp add abfall --url ${ENDPOINT}`,
   ".mcp.json": `{ "mcpServers": { "abfall": { "url": "${ENDPOINT}" } } }`,
-  Docker: `docker run -p 8000:8000 ghcr.io/alpayc/mcp-abfall:latest`,
+  Docker: `docker run -p 8000:8000 ghcr.io/alpayc/abfall-mcp-server:latest`,
   curl: `curl -X POST ${ENDPOINT} \\
   -H "Content-Type: application/json" \\
   -H "Accept: application/json, text/event-stream" \\
@@ -60,7 +60,7 @@ const snippets = {
 type SnippetKey = keyof typeof snippets;
 
 /* -------------------------------------------------------------------------
-   Tools. Argumente, Art und Quellzeile entsprechen src/mcp_abfall/server.py:
+   Tools. Argumente, Art und Quellzeile entsprechen src/abfall_mcp_server/server.py:
    "read" kommt aus read_only_hint, "portal"/"registry" aus open_world_hint.
    ------------------------------------------------------------------------- */
 
@@ -79,7 +79,7 @@ const tools: {
   {
     name: "abfuhrtermine",
     kind: "portal",
-    line: 209,
+    line: 214,
     de: "Ermittelt den zuständigen Träger zu einer Adresse und liefert dessen Abfuhrtermine.",
     en: "Resolves the responsible authority for an address and returns its collection dates.",
     args: [
@@ -95,7 +95,7 @@ const tools: {
   {
     name: "finde_traeger",
     kind: "registry",
-    line: 365,
+    line: 374,
     de: "Sucht Entsorgungsträger nach Orts- oder Betriebsnamen, ohne Geocoding.",
     en: "Searches waste authorities by place or operator name, without geocoding.",
     args: [
@@ -107,7 +107,7 @@ const tools: {
   {
     name: "traeger_details",
     kind: "registry",
-    line: 389,
+    line: 402,
     de: "Zeigt Portal, erwartete Argumente, Vorbelegung und Beispielorte eines Trägers.",
     en: "Shows one authority's portal, expected arguments, presets and example places.",
     args: [
@@ -118,7 +118,7 @@ const tools: {
   {
     name: "abfuhrtermine_fuer_traeger",
     kind: "portal",
-    line: 420,
+    line: 437,
     de: "Fragt einen bekannten Träger gezielt ab — der Weg, um eine Rückfrage zu beantworten.",
     en: "Queries a known authority directly — the way to answer a follow-up question.",
     args: [
@@ -134,7 +134,7 @@ const tools: {
   {
     name: "abdeckung",
     kind: "registry",
-    line: 491,
+    line: 512,
     de: "Zählt erfasste Träger und Datenquellen.",
     en: "Counts registered authorities and data sources.",
     args: [],
@@ -147,7 +147,7 @@ const resources = [
     title: "Entsorgungsträger",
     uri: "abfall://traeger",
     mime: "application/json",
-    line: 518,
+    line: 539,
     de: "Alle erfassten Träger mit ID, Name und Portal — dieselbe Liste, die das Verzeichnis unten durchsucht.",
     en: "Every registered authority with ID, name and portal — the same list the directory below searches.",
   },
@@ -721,7 +721,7 @@ export function LandingPage({ language }: { language: Language }) {
             <span>{t.protokoll} <span className="val">{PROTOCOL}</span></span>
             <span className="sep">·</span>
             <a href={REPO} rel="noreferrer" target="_blank">
-              github <b>AlpayC/mcp-abfall</b>
+              github <b>AlpayC/abfall-mcp-server</b>
               <ExternalLink size={11} />
             </a>
           </div>

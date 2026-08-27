@@ -6,6 +6,31 @@ All notable changes to this project. Format based on
 
 ## [Unreleased]
 
+### Changed
+
+- **Renamed** from `mcp-abfall` to `abfall-mcp-server` — repository, package,
+  CLI command, Python module, Docker image and cache directory. The
+  environment variables changed accordingly: `MCP_ABFALL_*` → `ABFALL_MCP_*`.
+  GitHub redirects the old repository URL, but anyone with a local clone should
+  update their remote, and existing configs that call `mcp-abfall` need the new
+  command name. The registry entry in `server.json` moved to
+  `io.github.AlpayC/abfall-mcp-server`, which has to match the repository for
+  the registry's namespace check.
+
+### Added
+
+- Website: filterable tool cards with `invocation`, `schema` and a `view source`
+  link into `server.py`, resources as their own section, and a searchable
+  directory of all 995 authorities.
+- Tools now declare MCP `ToolAnnotations`: `read_only_hint` on all of them, and
+  `open_world_hint` where a municipal portal is contacted.
+
+### Fixed
+
+- The site rendered in the system font stack instead of Geist: the font
+  variables sat on `<body>` while `--font-body` and `--font-code` were declared
+  on `:root` and referenced them there.
+
 ## [0.1.0] – 2026-08-26
 
 First release.
@@ -46,5 +71,5 @@ First release.
 - An authority is only queried unasked when it matches the address confidently
   enough (`MIN_AUTO_FETCH`).
 
-[Unreleased]: https://github.com/AlpayC/mcp-abfall/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/AlpayC/mcp-abfall/releases/tag/v0.1.0
+[Unreleased]: https://github.com/AlpayC/abfall-mcp-server/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/AlpayC/abfall-mcp-server/releases/tag/v0.1.0

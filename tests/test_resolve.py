@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from mcp_abfall import geo, resolve
-from mcp_abfall.registry import Provider
+from abfall_mcp_server import geo, resolve
+from abfall_mcp_server.registry import Provider
 
 # --------------------------------------------------------------------------
 # Adressvarianten
@@ -169,7 +169,7 @@ def test_leere_liste_liefert_nichts():
 def _termine():
     import datetime as dt
 
-    from mcp_abfall.wcs import Pickup
+    from abfall_mcp_server.wcs import Pickup
 
     return [
         Pickup(dt.date(2026, 9, 1), "Biomüll"),
@@ -244,7 +244,7 @@ def test_hausnummer_ausserhalb_des_bereichs():
 
 def test_fehlendes_pflichtargument_wird_benannt():
     """Statt eines nackten TypeError soll klar werden, was fehlt."""
-    from mcp_abfall.registry import ArgSpec, Provider
+    from abfall_mcp_server.registry import ArgSpec, Provider
 
     provider = Provider(
         id="x", source="ics", title="T",

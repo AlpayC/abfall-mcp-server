@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from mcp_abfall import registry
+from abfall_mcp_server import registry
 
 
 @pytest.fixture(scope="module")
@@ -146,7 +146,7 @@ def test_ortsebene_im_beispiel_zaehlt_voll():
 def test_generischer_stadtteil_zieht_nicht_quer():
     """Regression: der Hamburger Stadtteil "Altstadt" traf den Traeger der
     Koblenzer Altstadt. Stadtteile sind daher keine Suchbegriffe mehr."""
-    from mcp_abfall import geo
+    from abfall_mcp_server import geo
 
     place = geo.Place(query="x", display_name="x", city="Hamburg", district="Altstadt")
     assert [t for t, _ in place.search_terms()] == ["Hamburg"]

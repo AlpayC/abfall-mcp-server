@@ -21,7 +21,7 @@ body:
     attributes:
       label: How can it be reproduced?
       placeholder: |
-        1. uv run mcp-abfall
+        1. uv run abfall-mcp-server
         2. Call tool `abfuhrtermine` with …
         3. …
     validations:
@@ -37,7 +37,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: "`uv run python -c 'import mcp_abfall; print(mcp_abfall.__version__)'`, or the commit."
+      description: "`uv run python -c 'import abfall_mcp_server; print(abfall_mcp_server.__version__)'`, or the commit."
       placeholder: "0.1.0"
     validations:
       required: true

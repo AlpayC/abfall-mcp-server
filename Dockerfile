@@ -15,8 +15,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
-    MCP_ABFALL_CACHE_DIR=/var/cache/mcp-abfall \
-    MCP_ABFALL_WEB_DIR=/app/web \
+    ABFALL_MCP_CACHE_DIR=/var/cache/abfall-mcp-server \
+    ABFALL_MCP_WEB_DIR=/app/web \
     PORT=8000 \
     PATH="/app/.venv/bin:$PATH"
 
@@ -38,17 +38,17 @@ COPY vendor/hacs_waste_collection_schedule/custom_components/waste_collection_sc
     ./vendor/hacs_waste_collection_schedule/custom_components/waste_collection_schedule/waste_collection_schedule
 
 RUN uv sync --frozen --no-dev \
-    && groupadd --system mcp-abfall \
-    && useradd --system --gid mcp-abfall --create-home mcp-abfall \
-    && mkdir -p "$MCP_ABFALL_CACHE_DIR" \
-    && chown -R mcp-abfall:mcp-abfall "$MCP_ABFALL_CACHE_DIR"
+    && groupadd --system abfall-mcp-server \
+    && useradd --system --gid abfall-mcp-server --create-home abfall-mcp-server \
+    && mkdir -p "$ABFALL_MCP_CACHE_DIR" \
+    && chown -R abfall-mcp-server:abfall-mcp-server "$ABFALL_MCP_CACHE_DIR"
 
-USER mcp-abfall
+USER abfall-mcp-server
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD ["python", "-c", "import os, urllib.request; port = os.environ.get('PORT', '8000'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health', timeout=3)"]
 
-ENTRYPOINT ["mcp-abfall"]
+ENTRYPOINT ["abfall-mcp-server"]
 CMD ["--http", "--host", "0.0.0.0", "--log-level", "INFO"]

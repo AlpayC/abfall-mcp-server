@@ -40,7 +40,7 @@ jobs:
       - name: Check tag against package version
         run: |
           tag="${{ inputs.tag || github.ref_name }}"
-          version="v$(uv run python -c 'import mcp_abfall; print(mcp_abfall.__version__)')"
+          version="v$(uv run python -c 'import abfall_mcp_server; print(abfall_mcp_server.__version__)')"
           if [ "$tag" != "$version" ]; then
             echo "::error::Tag $tag does not match package version $version."
             exit 1

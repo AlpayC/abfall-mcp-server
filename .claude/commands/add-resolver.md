@@ -13,7 +13,7 @@ derived from an address — `standort` in Dresden, `idHouseNumber` in Leipzig,
    what it actually demands:
 
    ```bash
-   uv run python -c "from mcp_abfall import registry; [print(p.id, '|', p.title, '| open:', p.open_args) for p, _ in registry.search('$ARGUMENTS', limit=5)]"
+   uv run python -c "from abfall_mcp_server import registry; [print(p.id, '|', p.title, '| open:', p.open_args) for p, _ in registry.search('$ARGUMENTS', limit=5)]"
    ```
 
    If it needs a plain-text street or town rather than an identifier, the
@@ -33,7 +33,7 @@ derived from an address — `standort` in Dresden, `idHouseNumber` in Leipzig,
    `requests` and confirm the identifier you get matches the module's
    `TEST_CASES`. That check caught a wrong endpoint once already.
 
-5. **Write the resolver** in `src/mcp_abfall/lookup.py`, following
+5. **Write the resolver** in `src/abfall_mcp_server/lookup.py`, following
    `resolve_hamburg` / `resolve_bsr`:
 
    - signature `(default_args, address, picker, *, min_confidence, timeout)`

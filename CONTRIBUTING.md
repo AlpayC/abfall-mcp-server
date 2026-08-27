@@ -10,8 +10,8 @@ is (see *Style*). A German README is available at
 ## Setup
 
 ```bash
-git clone --recurse-submodules https://github.com/AlpayC/mcp-abfall.git
-cd mcp-abfall
+git clone --recurse-submodules https://github.com/AlpayC/abfall-mcp-server.git
+cd abfall-mcp-server
 uv sync
 uv run python scripts/build_registry.py
 uv run pytest
@@ -74,7 +74,7 @@ So the first question is where the contribution belongs:
   belongs here. Typically it requires an internal identifier (`standort`,
   `idHouseNumber`, `streetnr`) that cannot be derived from an address.
 
-For the second case, the pattern lives in `src/mcp_abfall/lookup.py`: one
+For the second case, the pattern lives in `src/abfall_mcp_server/lookup.py`: one
 resolver per authority, reimplementing its address dialog. They all share the
 same shape —
 

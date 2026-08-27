@@ -28,8 +28,8 @@ Relevant context for assessing reports:
   resolution. Their responses are untrusted and get parsed.
 - It **processes addresses**. Those are personal data. They go to Nominatim and
   to the respective portal, because there are no collection dates without them.
-  Resolved addresses are cached under `~/.cache/mcp-abfall/`, or under the path
-  set in `MCP_ABFALL_CACHE_DIR`.
+  Resolved addresses are cached under `~/.cache/abfall-mcp-server/`, or under the path
+  set in `ABFALL_MCP_CACHE_DIR`.
 - It **holds no credentials** and needs none.
 - Executing source modules from the submodule is intentional: it is the data
   source. Anyone who does not trust the submodule should not run this project.

@@ -6,8 +6,8 @@ contact_links:
       That is where the data comes from. Added there, it arrives here with the
       next update - and every other project using it benefits too.
   - name: Question or idea
-    url: https://github.com/AlpayC/mcp-abfall/discussions
+    url: https://github.com/AlpayC/abfall-mcp-server/discussions
     about: For anything that is not a bug report yet.
   - name: Security vulnerability
-    url: https://github.com/AlpayC/mcp-abfall/security/advisories/new
+    url: https://github.com/AlpayC/abfall-mcp-server/security/advisories/new
     about: Please report privately, not as a public issue.

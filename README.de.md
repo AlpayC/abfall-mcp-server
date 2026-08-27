@@ -1,8 +1,8 @@
-# mcp-abfall
+# abfall-mcp-server
 
 *Deutsch · [English](README.md)*
 
-[![CI](https://github.com/AlpayC/mcp-abfall/actions/workflows/ci.yml/badge.svg)](https://github.com/AlpayC/mcp-abfall/actions/workflows/ci.yml)
+[![CI](https://github.com/AlpayC/abfall-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/AlpayC/abfall-mcp-server/actions/workflows/ci.yml)
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
 [![Träger: 995](https://img.shields.io/badge/Entsorgungstr%C3%A4ger-995-green.svg)](data/providers.json)
@@ -44,8 +44,8 @@ Paket: er braucht die Datenbasis unter `vendor/` und die Registry unter
 auf PyPI — ein Wheel wäre installierbar und trotzdem funktionsunfähig.
 
 ```bash
-git clone --recurse-submodules https://github.com/AlpayC/mcp-abfall.git
-cd mcp-abfall
+git clone --recurse-submodules https://github.com/AlpayC/abfall-mcp-server.git
+cd abfall-mcp-server
 uv sync
 uv run pytest
 ```
@@ -81,7 +81,7 @@ Lokal per stdio — in `claude_desktop_config.json` bzw. `.mcp.json`:
   "mcpServers": {
     "abfall": {
       "command": "uv",
-      "args": ["--directory", "/pfad/zu/mcp-abfall", "run", "mcp-abfall"]
+      "args": ["--directory", "/pfad/zu/abfall-mcp-server", "run", "abfall-mcp-server"]
     }
   }
 }
@@ -90,13 +90,13 @@ Lokal per stdio — in `claude_desktop_config.json` bzw. `.mcp.json`:
 Als HTTP-Dienst:
 
 ```bash
-uv run mcp-abfall --http --host 127.0.0.1 --port 8000
+uv run abfall-mcp-server --http --host 127.0.0.1 --port 8000
 ```
 
 Beim HTTP-Betrieb sollte bedacht werden, dass jede Anfrage die Portale der
 Träger und Nominatim belastet. Für mehr als den Eigenbedarf gehört ein Cache
 davor und eine eigene Nominatim-Instanz dahinter
-(`MCP_ABFALL_NOMINATIM_URL`).
+(`ABFALL_MCP_NOMINATIM_URL`).
 
 ## Tools
 
@@ -181,7 +181,7 @@ Die Termine stammen von den Portalen der jeweiligen Entsorgungsträger, die
 Adressauflösung von [Nominatim](https://nominatim.openstreetmap.org/)
 (OpenStreetMap). Für Nominatim gilt eine Nutzungsrichtlinie — höchstens eine
 Anfrage pro Sekunde; der Server hält sie ein und legt Ergebnisse in
-`~/.cache/mcp-abfall/` ab.
+`~/.cache/abfall-mcp-server/` ab.
 
 Bei Terminen, an denen etwas hängt (Sperrmüll, Schadstoffmobil), lohnt der
 Blick auf die Portaladresse, die jede Antwort mitliefert.

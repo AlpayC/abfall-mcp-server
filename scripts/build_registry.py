@@ -27,8 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import yaml
 
-from mcp_abfall import wcs
-from mcp_abfall.registry import ArgSpec, Provider, _is_address, normalize, save
+from abfall_mcp_server import wcs
+from abfall_mcp_server.registry import ArgSpec, Provider, _is_address, normalize, save
 
 REPO_ROOT = wcs.WCS_PKG.parents[2]
 DOC_ROOT = REPO_ROOT / "doc"

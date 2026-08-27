@@ -1,8 +1,8 @@
 """MCP-Server fuer Abfall-/Umweltkalender deutscher Staedte und Landkreise.
 
 Start:
-    mcp-abfall                 # stdio (Standard, fuer lokale MCP-Clients)
-    mcp-abfall --http          # Streamable HTTP auf 127.0.0.1:8000
+    abfall-mcp-server                 # stdio (Standard, fuer lokale MCP-Clients)
+    abfall-mcp-server --http          # Streamable HTTP auf 127.0.0.1:8000
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from starlette.responses import FileResponse, JSONResponse, Response
 
 from . import __version__, geo, registry, resolve, wcs
 
-_LOG = logging.getLogger("mcp_abfall")
+_LOG = logging.getLogger("abfall_mcp_server")
 
 #: Ab diesem Trefferwert wird ein Traeger ungefragt abgefragt. Darunter ist die
 #: Zuordnung Adresse -> Traeger nicht belastbar genug: ein Traeger, der nur
@@ -63,7 +63,7 @@ async def health(_: Request) -> JSONResponse:
 def _web_datei(*teile: str) -> Path | None:
     """Eine gebaute Web-Datei finden, ohne das Web-Verzeichnis zu verlassen."""
     standard = Path(__file__).resolve().parents[2] / "web" / "out"
-    wurzel = Path(os.environ.get("MCP_ABFALL_WEB_DIR", standard)).resolve()
+    wurzel = Path(os.environ.get("ABFALL_MCP_WEB_DIR", standard)).resolve()
     datei = wurzel.joinpath(*teile).resolve()
     try:
         datei.relative_to(wurzel)
@@ -545,7 +545,7 @@ def traeger_liste() -> list[dict]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="mcp-abfall",
+        prog="abfall-mcp-server",
         description="MCP-Server fuer deutsche Abfall-/Umweltkalender.",
     )
     parser.add_argument(
@@ -555,13 +555,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--host",
-        default=os.environ.get("MCP_ABFALL_HOST", "127.0.0.1"),
+        default=os.environ.get("ABFALL_MCP_HOST", "127.0.0.1"),
         help="Nur mit --http.",
     )
     parser.add_argument(
         "--port",
         type=int,
-        default=os.environ.get("PORT", os.environ.get("MCP_ABFALL_PORT", "8000")),
+        default=os.environ.get("PORT", os.environ.get("ABFALL_MCP_PORT", "8000")),
         help="Nur mit --http.",
     )
     parser.add_argument(

@@ -8,6 +8,62 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "abfall-mcp-server"
+source = { editable = "." }
+dependencies = [
+    { name = "beautifulsoup4" },
+    { name = "curl-cffi" },
+    { name = "icalendar" },
+    { name = "icalevents" },
+    { name = "inquirer" },
+    { name = "jinja2" },
+    { name = "lxml" },
+    { name = "mcp", extra = ["cli"] },
+    { name = "pdfminer-six" },
+    { name = "pycryptodome" },
+    { name = "pypdf" },
+    { name = "python-dateutil" },
+    { name = "pytz" },
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "typing-extensions" },
+    { name = "urllib3" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "beautifulsoup4", specifier = ">=4.12.2" },
+    { name = "curl-cffi", specifier = ">=0.7.0" },
+    { name = "icalendar", specifier = ">=4.0.9" },
+    { name = "icalevents", specifier = ">=0.2.1" },
+    { name = "inquirer", specifier = ">=3.4.1" },
+    { name = "jinja2", specifier = ">=3.1.2" },
+    { name = "lxml", specifier = ">=4.9.4" },
+    { name = "mcp", extras = ["cli"], specifier = ">=1.2.0" },
+    { name = "pdfminer-six", specifier = ">=20221105" },
+    { name = "pycryptodome", specifier = ">=3.20.0" },
+    { name = "pypdf", specifier = ">=5.1.0" },
+    { name = "python-dateutil", specifier = ">=2.8.2" },
+    { name = "pytz", specifier = ">=2021.3" },
+    { name = "pyyaml", specifier = ">=6.0.1" },
+    { name = "requests", specifier = ">=2.31.0" },
+    { name = "typing-extensions", specifier = ">=4.12.2" },
+    { name = "urllib3", specifier = ">=1.26.18" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "ruff", specifier = ">=0.6" },
+]
+
+[[package]]
 name = "annotated-doc"
 version = "0.0.5"
 source = { registry = "https://pypi.org/simple" }
@@ -863,62 +919,6 @@ wheels = [
 cli = [
     { name = "python-dotenv" },
     { name = "typer" },
-]
-
-[[package]]
-name = "mcp-abfall"
-source = { editable = "." }
-dependencies = [
-    { name = "beautifulsoup4" },
-    { name = "curl-cffi" },
-    { name = "icalendar" },
-    { name = "icalevents" },
-    { name = "inquirer" },
-    { name = "jinja2" },
-    { name = "lxml" },
-    { name = "mcp", extra = ["cli"] },
-    { name = "pdfminer-six" },
-    { name = "pycryptodome" },
-    { name = "pypdf" },
-    { name = "python-dateutil" },
-    { name = "pytz" },
-    { name = "pyyaml" },
-    { name = "requests" },
-    { name = "typing-extensions" },
-    { name = "urllib3" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "beautifulsoup4", specifier = ">=4.12.2" },
-    { name = "curl-cffi", specifier = ">=0.7.0" },
-    { name = "icalendar", specifier = ">=4.0.9" },
-    { name = "icalevents", specifier = ">=0.2.1" },
-    { name = "inquirer", specifier = ">=3.4.1" },
-    { name = "jinja2", specifier = ">=3.1.2" },
-    { name = "lxml", specifier = ">=4.9.4" },
-    { name = "mcp", extras = ["cli"], specifier = ">=1.2.0" },
-    { name = "pdfminer-six", specifier = ">=20221105" },
-    { name = "pycryptodome", specifier = ">=3.20.0" },
-    { name = "pypdf", specifier = ">=5.1.0" },
-    { name = "python-dateutil", specifier = ">=2.8.2" },
-    { name = "pytz", specifier = ">=2021.3" },
-    { name = "pyyaml", specifier = ">=6.0.1" },
-    { name = "requests", specifier = ">=2.31.0" },
-    { name = "typing-extensions", specifier = ">=4.12.2" },
-    { name = "urllib3", specifier = ">=1.26.18" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pytest", specifier = ">=8.0" },
-    { name = "ruff", specifier = ">=0.6" },
 ]
 
 [[package]]
