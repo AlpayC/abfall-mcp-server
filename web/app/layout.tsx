@@ -50,11 +50,20 @@ const themeBootstrap = `try{var t=localStorage.getItem("theme");if(!t){t=matchMe
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="de" suppressHydrationWarning>
+    // Die Schriftvariablen gehoeren an <html>, nicht an <body>: --font-body und
+    // --font-code werden in :root deklariert und referenzieren sie. Standen sie
+    // nur auf <body>, war die Referenz auf html-Ebene undefiniert, die
+    // Deklaration damit ungueltig - und die ganze Seite rendete im System-Stack
+    // statt in Geist.
+    <html
+      lang="de"
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable}`}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body>
         {children}
       </body>
     </html>
