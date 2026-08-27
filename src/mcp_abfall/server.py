@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 from mcp.server.mcpserver import MCPServer
+from mcp.types import ToolAnnotations
 from pydantic import Field
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse, Response
@@ -205,6 +206,10 @@ def _empty_result_note(result: resolve.FetchResult) -> dict:
         "Adresse und liefert dessen Abfuhrtermine. Erster Anlaufpunkt fuer "
         "Fragen wie 'Wann wird bei mir die Biotonne geleert?'."
     ),
+    annotations=ToolAnnotations(
+        read_only_hint=True,
+        open_world_hint=True,
+    ),
 )
 def abfuhrtermine(
     adresse: Annotated[
@@ -361,6 +366,10 @@ def abfuhrtermine(
         "Sucht Entsorgungstraeger nach Orts- oder Betriebsnamen, ohne Geocoding. "
         "Nuetzlich, wenn die Adresssuche nichts findet oder der Betrieb bekannt ist."
     ),
+    annotations=ToolAnnotations(
+        read_only_hint=True,
+        open_world_hint=False,
+    ),
 )
 def finde_traeger(
     suchbegriff: Annotated[
@@ -384,6 +393,10 @@ def finde_traeger(
     description=(
         "Zeigt, welche Argumente ein Traeger erwartet, welche Orte als Beispiel "
         "hinterlegt sind und wo sein Portal liegt."
+    ),
+    annotations=ToolAnnotations(
+        read_only_hint=True,
+        open_world_hint=False,
     ),
 )
 def traeger_details(
@@ -415,6 +428,10 @@ def traeger_details(
     description=(
         "Fragt einen Traeger direkt ab - fuer Rueckfragen aus `abfuhrtermine` "
         "oder wenn der Traeger bereits feststeht."
+    ),
+    annotations=ToolAnnotations(
+        read_only_hint=True,
+        open_world_hint=True,
     ),
 )
 def abfuhrtermine_fuer_traeger(
@@ -487,6 +504,10 @@ def abfuhrtermine_fuer_traeger(
 @mcp.tool(
     title="Abdeckung",
     description="Zeigt, wie viele Entsorgungstraeger und Datenquellen erfasst sind.",
+    annotations=ToolAnnotations(
+        read_only_hint=True,
+        open_world_hint=False,
+    ),
 )
 def abdeckung() -> dict:
     providers = registry.load()

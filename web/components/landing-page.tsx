@@ -31,10 +31,16 @@ type Language = "de" | "en";
 const ENDPOINT = "https://abfall-mcp.alpaycelik.dev/mcp";
 const HOST = "abfall-mcp.alpaycelik.dev";
 const REPO = "https://github.com/AlpayC/mcp-abfall";
+const SOURCE = `${REPO}/blob/main/src/mcp_abfall/server.py`;
 const VERSION = "v0.1.0";
 const PROTOCOL = "2025-11-25";
 const PROVIDERS = 995;
 const SOURCES = 150;
+
+/* Datenbasis: das Upstream-Projekt, aus dem die Traegerliste stammt. */
+const UPSTREAM = "https://github.com/mampfes/hacs_waste_collection_schedule";
+const UPSTREAM_NAME = "hacs_waste_collection_schedule";
+const UPSTREAM_VERSION = "v2.32.0";
 
 /* -------------------------------------------------------------------------
    Client-Zeilen. Eine Zeile pro Client, damit das Panel kompakt bleibt.
@@ -54,14 +60,26 @@ const snippets = {
 type SnippetKey = keyof typeof snippets;
 
 /* -------------------------------------------------------------------------
-   Tool-Signaturen, entsprechend den Schemata aus list_tools.
+   Tools. Argumente, Art und Quellzeile entsprechen src/mcp_abfall/server.py:
+   "read" kommt aus read_only_hint, "portal"/"registry" aus open_world_hint.
    ------------------------------------------------------------------------- */
 
 type Arg = { n: string; t: string; req?: boolean; de: string; en: string };
+type Kind = "portal" | "registry";
 
-const tools: { name: string; de: string; en: string; args: Arg[]; call: string }[] = [
+const tools: {
+  name: string;
+  kind: Kind;
+  line: number;
+  de: string;
+  en: string;
+  args: Arg[];
+  call: string;
+}[] = [
   {
     name: "abfuhrtermine",
+    kind: "portal",
+    line: 209,
     de: "Ermittelt den zuständigen Träger zu einer Adresse und liefert dessen Abfuhrtermine.",
     en: "Resolves the responsible authority for an address and returns its collection dates.",
     args: [
@@ -76,6 +94,8 @@ const tools: { name: string; de: string; en: string; args: Arg[]; call: string }
   },
   {
     name: "finde_traeger",
+    kind: "registry",
+    line: 365,
     de: "Sucht Entsorgungsträger nach Orts- oder Betriebsnamen, ohne Geocoding.",
     en: "Searches waste authorities by place or operator name, without geocoding.",
     args: [
@@ -86,13 +106,19 @@ const tools: { name: string; de: string; en: string; args: Arg[]; call: string }
   },
   {
     name: "traeger_details",
+    kind: "registry",
+    line: 389,
     de: "Zeigt Portal, erwartete Argumente, Vorbelegung und Beispielorte eines Trägers.",
     en: "Shows one authority's portal, expected arguments, presets and example places.",
-    args: [{ n: "traeger_id", t: "string", req: true, de: "ID aus finde_traeger", en: "ID from finde_traeger" }],
+    args: [
+      { n: "traeger_id", t: "string", req: true, de: "ID aus finde_traeger", en: "ID from finde_traeger" },
+    ],
     call: `traeger_details({ traeger_id: "abfall_io.egst-…" })`,
   },
   {
     name: "abfuhrtermine_fuer_traeger",
+    kind: "portal",
+    line: 420,
     de: "Fragt einen bekannten Träger gezielt ab — der Weg, um eine Rückfrage zu beantworten.",
     en: "Queries a known authority directly — the way to answer a follow-up question.",
     args: [
@@ -107,10 +133,23 @@ const tools: { name: string; de: string; en: string; args: Arg[]; call: string }
   },
   {
     name: "abdeckung",
+    kind: "registry",
+    line: 491,
     de: "Zählt erfasste Träger und Datenquellen.",
     en: "Counts registered authorities and data sources.",
     args: [],
     call: `abdeckung()`,
+  },
+];
+
+const resources = [
+  {
+    title: "Entsorgungsträger",
+    uri: "abfall://traeger",
+    mime: "application/json",
+    line: 518,
+    de: "Alle erfassten Träger mit ID, Name und Portal — dieselbe Liste, die das Verzeichnis unten durchsucht.",
+    en: "Every registered authority with ID, name and portal — the same list the directory below searches.",
   },
 ];
 
@@ -123,7 +162,6 @@ const copy = {
     headlineAccent: "deinen KI-Assistenten.",
     ctaPrimary: "Server verbinden",
     ctaSecondary: "Tools ansehen",
-    keys: "API-Keys",
     scrollHint: "Endpoint, Tools und Abdeckung",
     connect: "anschluss",
     connectNote: "Endpoint in den MCP-Client eintragen, Client neu starten. Danach steht der Server als „abfall“ bereit.",
@@ -138,19 +176,21 @@ const copy = {
     protokoll: "Protokoll",
     copy: "Kopieren",
     copied: "Kopiert",
-    built: "Datenbasis: hacs_waste_collection_schedule · MIT",
-    demo: "Beispiel",
+    built: "Datenbasis:",
+    demo: "beispiel",
     ask: "Wann wird bei mir die Biotonne geleert?",
     call: '→ abfuhrtermine({ adresse: "Kirchstraße 5, Emsdetten" })',
     result: "✓ Dienstag, 1. September · Biomüll · EGST Steinfurt",
     toolsLabel: "tools",
-    toolsNote: "Tool- und Feldnamen sind deutsch, weil die Domäne es ist. Karte aufklappen für die Signatur.",
-    field: "Feld",
-    fields: "Felder",
-    noArgs: "ohne Argumente",
-    schema: "Signatur",
-    resourceLabel: "resource",
-    resourceText: "Alle erfassten Träger als Liste mit ID, Name und Portal.",
+    toolsNote: "Tool- und Feldnamen sind deutsch, weil die Domäne es ist. Alle Tools lesen nur; „portal“ fragt dabei ein kommunales Portal an, „registry“ antwortet aus der mitgelieferten Trägerliste.",
+    schema: "Schema",
+    invocation: "Aufruf",
+    viewSource: "Quelltext",
+    filterAll: "alle",
+    searchTools: "Tools durchsuchen …",
+    noTools: "Kein Tool passt zu dieser Auswahl.",
+    resourceLabel: "ressourcen",
+    resourceNote: "Wird über resources/read gelesen, nicht als Tool aufgerufen.",
     coverage: "abdeckung",
     coverageNote: "Deutschland hat keine bundesweite Abfall-Schnittstelle. Rund 400 Träger betreiben eigene Portale hinter einer Handvoll Plattformen.",
     finderPlaceholder: "Verzeichnis filtern — Träger, Kreis oder Stadt …",
@@ -173,7 +213,10 @@ const copy = {
     ],
     ruleTitle: "Nachfragen statt raten",
     ruleText: "Ist eine Zuordnung nicht sicher genug, kommen konkrete Auswahlmöglichkeiten zurück statt eines Ergebnisses. Ein falsch geratener Ort liefert sonst klaglos den Kalender der Nachbargemeinde — falsch, aber unauffällig.",
-    footer: "Offener MCP-Server für deutsche Abfuhrtermine.",
+    changelog: "Changelog",
+    issues: "Issues",
+    sourceWord: "Quelltext",
+    builtOn: "gebaut auf",
   },
   en: {
     eyebrow: "Public MCP server · Germany",
@@ -181,7 +224,6 @@ const copy = {
     headlineAccent: "your AI assistant.",
     ctaPrimary: "Connect the server",
     ctaSecondary: "See the tools",
-    keys: "API keys",
     scrollHint: "Endpoint, tools and coverage",
     connect: "connect",
     connectNote: "Add the endpoint to your MCP client and restart it. The server then shows up as “abfall”.",
@@ -196,19 +238,21 @@ const copy = {
     protokoll: "protocol",
     copy: "Copy",
     copied: "Copied",
-    built: "Data source: hacs_waste_collection_schedule · MIT",
-    demo: "Example",
+    built: "Data source:",
+    demo: "example",
     ask: "When is my organic waste collected?",
     call: '→ abfuhrtermine({ adresse: "Kirchstraße 5, Emsdetten" })',
     result: "✓ Tuesday, 1 September · organic waste · EGST Steinfurt",
     toolsLabel: "tools",
-    toolsNote: "Tool and field names are German because the domain is. Expand a card for the signature.",
-    field: "field",
-    fields: "fields",
-    noArgs: "no arguments",
-    schema: "Signature",
-    resourceLabel: "resource",
-    resourceText: "Every registered authority with ID, name and portal.",
+    toolsNote: "Tool and field names are German because the domain is. All tools only read; “portal” queries a municipal portal, “registry” answers from the bundled authority list.",
+    schema: "schema",
+    invocation: "invocation",
+    viewSource: "view source",
+    filterAll: "all",
+    searchTools: "Search tools …",
+    noTools: "No tool matches this selection.",
+    resourceLabel: "resources",
+    resourceNote: "Read via resources/read, not called as a tool.",
     coverage: "coverage",
     coverageNote: "Germany has no nationwide waste API. Around 400 authorities run their own portals on top of a handful of platforms.",
     finderPlaceholder: "Filter the directory — authority, district or city …",
@@ -231,7 +275,10 @@ const copy = {
     ],
     ruleTitle: "Ask instead of guessing",
     ruleText: "When a match is not confident enough, the server returns concrete options instead of a result. A wrongly guessed town would otherwise cheerfully return the neighbouring municipality's calendar — wrong, but unremarkable.",
-    footer: "Open MCP server for German waste collection dates.",
+    changelog: "Changelog",
+    issues: "Issues",
+    sourceWord: "Source",
+    builtOn: "built on",
   },
 } as const;
 
@@ -301,6 +348,152 @@ function ConnectPanel({ language }: { language: Language }) {
   );
 }
 
+function Head({ label, count }: { label: string; count?: string }) {
+  return (
+    <div className="sec-head">
+      <h2>{label}</h2>
+      {count && <span className="sec-count">{count}</span>}
+    </div>
+  );
+}
+
+/* --- Tools ---------------------------------------------------------------- */
+
+/* "Aufruf" und "Schema" schalten denselben Kasten um, damit die Karte
+   geschlossen kompakt bleibt. */
+function ToolCard({
+  tool,
+  language,
+}: {
+  tool: (typeof tools)[number];
+  language: Language;
+}) {
+  const t = copy[language];
+  const [panel, setPanel] = useState<"call" | "schema" | null>(null);
+  const hasSchema = tool.args.length > 0;
+
+  return (
+    <article className="card">
+      <span className="card-name">{tool.name}</span>
+      <p className="card-desc">{tool[language]}</p>
+
+      <div className="card-foot">
+        <span className="tag">read</span>
+        <span className={cn("tag", tool.kind === "portal" ? "tag-alt" : "tag-mute")}>
+          {tool.kind}
+        </span>
+        <button
+          aria-expanded={panel === "call"}
+          className={cn("foot-btn", panel === "call" && "is-on")}
+          onClick={() => setPanel(panel === "call" ? null : "call")}
+          type="button"
+        >
+          · {t.invocation}
+        </button>
+        {hasSchema && (
+          <button
+            aria-expanded={panel === "schema"}
+            className={cn("foot-btn", panel === "schema" && "is-on")}
+            onClick={() => setPanel(panel === "schema" ? null : "schema")}
+            type="button"
+          >
+            · {t.schema}
+          </button>
+        )}
+        <a className="foot-src" href={`${SOURCE}#L${tool.line}`} rel="noreferrer" target="_blank">
+          {t.viewSource}
+          <ExternalLink size={10} />
+        </a>
+      </div>
+
+      {panel === "schema" && hasSchema && (
+        <div className="args">
+          {tool.args.map((a) => (
+            <div className="arg" key={a.n}>
+              <span className="arg-name">
+                {a.n}
+                {a.req && <span className="arg-req"> *</span>}
+              </span>
+              <span className="arg-type">{a.t}</span>
+              <span className="arg-desc">{a[language]}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {panel === "call" && <code className="call">{tool.call}</code>}
+    </article>
+  );
+}
+
+function ToolsSection({ language }: { language: Language }) {
+  const t = copy[language];
+  const [kind, setKind] = useState<Kind | "all">("all");
+  const [query, setQuery] = useState("");
+
+  const needle = query.trim().toLowerCase();
+  const shown = tools.filter(
+    (tool) =>
+      (kind === "all" || tool.kind === kind) &&
+      (needle.length === 0 ||
+        tool.name.toLowerCase().includes(needle) ||
+        tool[language].toLowerCase().includes(needle)),
+  );
+
+  const counts = {
+    all: tools.length,
+    portal: tools.filter((x) => x.kind === "portal").length,
+    registry: tools.filter((x) => x.kind === "registry").length,
+  };
+
+  return (
+    <section className="sec" id="tools">
+      <Head label={t.toolsLabel} count={String(tools.length)} />
+      <p className="sec-note">{t.toolsNote}</p>
+
+      <div className="toolbar">
+        <div className="chips">
+          {(["all", "portal", "registry"] as const).map((key) => (
+            <button
+              className={cn("chip-filter", kind === key && "is-active")}
+              key={key}
+              onClick={() => setKind(key)}
+              type="button"
+            >
+              {key === "all" ? t.filterAll : key}
+              <i>{counts[key]}</i>
+            </button>
+          ))}
+        </div>
+
+        <div className="tool-search">
+          <Search size={14} aria-hidden="true" />
+          <input
+            aria-label={t.searchTools}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t.searchTools}
+            type="text"
+            value={query}
+          />
+          {query && (
+            <button aria-label="clear" onClick={() => setQuery("")} type="button">✕</button>
+          )}
+        </div>
+      </div>
+
+      {shown.length > 0 ? (
+        <div className="cards">
+          {shown.map((tool) => (
+            <ToolCard key={tool.name} language={language} tool={tool} />
+          ))}
+        </div>
+      ) : (
+        <p className="note">{t.noTools}</p>
+      )}
+    </section>
+  );
+}
+
 /* --- Trägerindex ---------------------------------------------------------- */
 
 type Entry = { t: string; s: string; o?: string[] };
@@ -334,8 +527,8 @@ function Finder({ language }: { language: Language }) {
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const asked = useRef(false);
 
-  // Das Verzeichnis wird sofort geladen: eine leere Liste waere eine
-  // schlechtere Auskunft als die ersten Eintraege.
+  // Sofort laden: eine leere Liste waere eine schlechtere Auskunft als die
+  // ersten Eintraege.
   useEffect(() => {
     if (asked.current) return;
     asked.current = true;
@@ -450,15 +643,6 @@ function ThemeToggle() {
   );
 }
 
-function Head({ label, count }: { label: string; count?: string }) {
-  return (
-    <div className="sec-head">
-      <h2>{label}</h2>
-      {count && <span className="sec-count">{count}</span>}
-    </div>
-  );
-}
-
 const bandNames = [
   "AWB Köln", "Stadtreinigung Hamburg", "Berliner Stadtreinigungsbetriebe",
   "Kreis Steinfurt", "AWM München", "Bremer Stadtreinigung", "EBU Ulm",
@@ -475,6 +659,8 @@ export function LandingPage({ language }: { language: Language }) {
   const health = useHealth();
   const other = language === "de" ? "/en/" : "/";
   const otherLabel = language === "de" ? "EN" : "DE";
+  const statusLabel =
+    health === "online" ? t.online : health === "offline" ? t.offline : t.checking;
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -505,9 +691,7 @@ export function LandingPage({ language }: { language: Language }) {
           <div className="badge-row">
             <span className={cn("status-pill", `is-${health}`)}>
               <span className="ping" />
-              <AnimatedShinyText>
-                {health === "online" ? t.online : health === "offline" ? t.offline : t.checking}
-              </AnimatedShinyText>
+              <AnimatedShinyText>{statusLabel}</AnimatedShinyText>
             </span>
             <span className="label-mono">{t.eyebrow}</span>
           </div>
@@ -522,18 +706,17 @@ export function LandingPage({ language }: { language: Language }) {
 
           <p className="lede">{t.lede}</p>
 
-          {/* Eine Zeile mit allem, was ein Client wissen muss. */}
           <div className={cn("facts", `is-${health}`)}>
             <span className="live-dot" />
-            <span>{health === "online" ? t.online : health === "offline" ? t.offline : t.checking}</span>
+            <span>{statusLabel}</span>
             <span className="sep">·</span>
             <span><b><NumberTicker value={PROVIDERS} /></b> {t.traeger}</span>
             <span className="sep">·</span>
             <span><b><NumberTicker value={SOURCES} /></b> {t.quellen}</span>
             <span className="sep">·</span>
-            <span><b>5</b> {t.toolsWord}</span>
+            <span><b>{tools.length}</b> {t.toolsWord}</span>
             <span className="sep">·</span>
-            <span><b>1</b> {t.resourceWord}</span>
+            <span><b>{resources.length}</b> {t.resourceWord}</span>
             <span className="sep">·</span>
             <span>{t.protokoll} <span className="val">{PROTOCOL}</span></span>
             <span className="sep">·</span>
@@ -569,111 +752,109 @@ export function LandingPage({ language }: { language: Language }) {
           </div>
         </section>
 
-          <section className="sec" id="connect">
-            <Head label={t.connect} count={PROTOCOL} />
-            <p className="sec-note">{t.connectNote}</p>
-            <ConnectPanel language={language} />
-            <span className="built">
-              <AnimatedShinyText>{t.built}</AnimatedShinyText>
-            </span>
-          </section>
+        <section className="sec" id="connect">
+          <Head label={t.connect} count={PROTOCOL} />
+          <p className="sec-note">{t.connectNote}</p>
+          <ConnectPanel language={language} />
+          <a className="built" href={UPSTREAM} rel="noreferrer" target="_blank">
+            <AnimatedShinyText>
+              {t.built} {UPSTREAM_NAME} {UPSTREAM_VERSION} · MIT
+            </AnimatedShinyText>
+            <ExternalLink size={10} />
+          </a>
+        </section>
 
-          <section className="sec">
-            <Head label={t.demo} />
-            <div className="demo">
-              <Terminal className="demo-term" sequence startOnView>
-                <TypingAnimation className="t-ask" duration={26} startOnView={false}>
-                  {`› ${t.ask}`}
-                </TypingAnimation>
-                <AnimatedSpan className="t-call">{t.call}</AnimatedSpan>
-                <AnimatedSpan className="t-ok">{t.result}</AnimatedSpan>
-              </Terminal>
+        <section className="sec">
+          <Head label={t.demo} />
+          <div className="demo">
+            <Terminal className="demo-term" sequence startOnView>
+              <TypingAnimation className="t-ask" duration={26} startOnView={false}>
+                {`› ${t.ask}`}
+              </TypingAnimation>
+              <AnimatedSpan className="t-call">{t.call}</AnimatedSpan>
+              <AnimatedSpan className="t-ok">{t.result}</AnimatedSpan>
+            </Terminal>
+          </div>
+        </section>
+
+        <ToolsSection language={language} />
+
+        <section className="sec" id="resources">
+          <Head label={t.resourceLabel} count={String(resources.length)} />
+          <p className="sec-note">{t.resourceNote}</p>
+          <div className="cards">
+            {resources.map((r) => (
+              <article className="card card-res" key={r.uri}>
+                <span className="card-name">{r.title}</span>
+                <p className="card-desc">{r[language]}</p>
+                <dl className="res-meta">
+                  <dt>uri</dt>
+                  <dd>{r.uri}</dd>
+                  <dt>mime</dt>
+                  <dd>{r.mime}</dd>
+                </dl>
+                <div className="card-foot">
+                  <a className="foot-src" href={`${SOURCE}#L${r.line}`} rel="noreferrer" target="_blank">
+                    {t.viewSource}
+                    <ExternalLink size={10} />
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="sec" id="coverage">
+          <Head label={t.coverage} count={`${PROVIDERS} × ${SOURCES}`} />
+          <p className="sec-note">{t.coverageNote}</p>
+          <Finder language={language} />
+          <div className="band">
+            <Marquee pauseOnHover style={{ ["--duration" as string]: "46s" }}>
+              {bandNames.map((n) => <span className="band-item" key={n}>{n}</span>)}
+            </Marquee>
+          </div>
+        </section>
+
+        <section className="sec">
+          <Head label={t.resolve} />
+          <p className="sec-note">{t.resolveNote}</p>
+          <ol className="chain">
+            {t.chain.map(([step, text]) => (
+              <li key={step}><dt>{step}</dt><dd>{text}</dd></li>
+            ))}
+          </ol>
+          <div className="rule">
+            <ShieldCheck size={17} aria-hidden="true" />
+            <div>
+              <h3>{t.ruleTitle}</h3>
+              <p>{t.ruleText}</p>
             </div>
-          </section>
-
-          <section className="sec" id="tools">
-            <Head label={t.toolsLabel} count="5" />
-            <p className="sec-note">{t.toolsNote}</p>
-            <div className="cards">
-              {tools.map((tool) => (
-                <details className="card" key={tool.name}>
-                  <summary>
-                    <span className="card-name">{tool.name}</span>
-                    <p className="card-desc">{tool[language]}</p>
-                    <span className="card-foot">
-                      <span className="tag">
-                        {tool.args.length === 0
-                          ? t.noArgs
-                          : `${tool.args.length} ${tool.args.length === 1 ? t.field : t.fields}`}
-                      </span>
-                      <span className="card-more">{t.schema}</span>
-                    </span>
-                  </summary>
-
-                  {tool.args.length > 0 && (
-                    <div className="args">
-                      {tool.args.map((a) => (
-                        <div className="arg" key={a.n}>
-                          <span className="arg-name">
-                            {a.n}{a.req && <span className="arg-req"> *</span>}
-                          </span>
-                          <span className="arg-type">{a.t}</span>
-                          <span className="arg-desc">{a[language]}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <code className="call">{tool.call}</code>
-                </details>
-              ))}
-
-              {/* Eine Resource hat keine Signatur - also auch nichts zum Aufklappen. */}
-              <div className="card">
-                <span className="card-name">abfall://traeger</span>
-                <p className="card-desc">{t.resourceText}</p>
-                <span className="card-foot">
-                  <span className="tag">{t.resourceWord}</span>
-                </span>
-              </div>
-            </div>
-          </section>
-
-          <section className="sec" id="coverage">
-            <Head label={t.coverage} count={`${PROVIDERS} × ${SOURCES}`} />
-            <p className="sec-note">{t.coverageNote}</p>
-            <Finder language={language} />
-            <div className="band">
-              <Marquee pauseOnHover style={{ ["--duration" as string]: "46s" }}>
-                {bandNames.map((n) => <span className="band-item" key={n}>{n}</span>)}
-              </Marquee>
-            </div>
-          </section>
-
-          <section className="sec">
-            <Head label={t.resolve} />
-            <p className="sec-note">{t.resolveNote}</p>
-            <ol className="chain">
-              {t.chain.map(([step, text]) => (
-                <li key={step}><dt>{step}</dt><dd>{text}</dd></li>
-              ))}
-            </ol>
-            <div className="rule">
-              <ShieldCheck size={17} aria-hidden="true" />
-              <div>
-                <h3>{t.ruleTitle}</h3>
-                <p>{t.ruleText}</p>
-              </div>
-            </div>
-          </section>
+          </div>
+        </section>
       </main>
 
       <footer className="wrap foot">
-        <span>{t.footer}</span>
         <div className="foot-links">
-          <a href={REPO} rel="noreferrer" target="_blank">GitHub</a>
+          <a href={`${REPO}/blob/main/CHANGELOG.md`} rel="noreferrer" target="_blank">{t.changelog}</a>
+          <span className="sep">·</span>
+          <a href={`${REPO}/releases/tag/${VERSION}`} rel="noreferrer" target="_blank">{VERSION}</a>
+          <span className="sep">·</span>
+          <a href={`${REPO}/issues`} rel="noreferrer" target="_blank">{t.issues}</a>
+          <span className="sep">·</span>
+          <a href={REPO} rel="noreferrer" target="_blank">{t.sourceWord}</a>
+          <span className="sep">·</span>
           <a href="/health">/health</a>
-          <a href="https://registry.modelcontextprotocol.io/" rel="noreferrer" target="_blank">Registry</a>
+          <span className="sep">·</span>
           <a href={other}>{otherLabel}</a>
+        </div>
+
+        <div className="foot-links foot-right">
+          <span>{t.builtOn}</span>
+          <a href={UPSTREAM} rel="noreferrer" target="_blank">
+            {UPSTREAM_NAME} {UPSTREAM_VERSION}
+          </a>
+          <span className="sep">·</span>
+          <a href={UPSTREAM} rel="noreferrer" target="_blank">GitHub</a>
         </div>
       </footer>
     </div>
