@@ -10,9 +10,65 @@ on:
 jobs:
   migration-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      badge-url: ${{ steps.check.outputs.badge-url }}
     steps:
       - name: Check MCP endpoint
+        id: check
         uses: AlpayC/mcp-migration-check@v1
         with:
           url: https://abfall-mcp.alpaycelik.dev/mcp
           fail-on: critical
+
+  update-badge:
+    needs: migration-check
+    if: ${{ always() && github.ref == 'refs/heads/main' && needs.migration-check.outputs.badge-url != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Update MCP readiness badges
+        env:
+          BADGE_URL: ${{ needs.migration-check.outputs.badge-url }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          start = "<!-- mcp-readiness-badge:start -->"
+          end = "<!-- mcp-readiness-badge:end -->"
+          target = "https://github.com/AlpayC/abfall-mcp-server/actions/workflows/mcp-check.yml"
+          badge = f"[![MCP 2026-07-28 readiness]({os.environ['BADGE_URL']})]({target})"
+          replacement = f"{start}\n{badge}\n{end}"
+
+          for filename in ("README.md", "README.de.md"):
+              path = Path(filename)
+              current = path.read_text(encoding="utf-8")
+              pattern = rf"{re.escape(start)}.*?{re.escape(end)}"
+              updated, count = re.subn(
+                  pattern,
+                  lambda _match: replacement,
+                  current,
+                  count=1,
+                  flags=re.DOTALL,
+              )
+              if count != 1:
+                  raise SystemExit(f"Badge markers missing or duplicated in {filename}")
+              path.write_text(updated, encoding="utf-8")
+          PY
+
+          if git diff --quiet -- README.md README.de.md; then
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md README.de.md
+          git commit -m "docs: update MCP readiness badge [skip ci]"
+          git push

@@ -6,6 +6,9 @@
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
 [![Träger: 995](https://img.shields.io/badge/Entsorgungstr%C3%A4ger-995-green.svg)](data/providers.json)
+<!-- mcp-readiness-badge:start -->
+[![MCP 2026-07-28 readiness](https://img.shields.io/badge/MCP%202026--07--28-A%20(100%2F100)-37d399)](https://github.com/AlpayC/abfall-mcp-server/actions/workflows/mcp-check.yml)
+<!-- mcp-readiness-badge:end -->
 
 MCP-Server für die Abfall- und Umweltkalender deutscher Städte und Landkreise.
 Fragt Abfuhrtermine (Restmüll, Biotonne, Papier, Gelber Sack, Sperrmüll,
