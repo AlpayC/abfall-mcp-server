@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
 [![Providers: 995](https://img.shields.io/badge/waste%20authorities-995-green.svg)](data/providers.json)
+[![MCP 2026-07-28](https://github.com/AlpayC/abfall-mcp-server/actions/workflows/mcp-check.yml/badge.svg)](https://github.com/AlpayC/abfall-mcp-server/actions/workflows/mcp-check.yml)
 
 MCP server for the waste collection calendars of German cities and districts.
 Looks up collection dates — residual waste, organic waste, paper, packaging,
