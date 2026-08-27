@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 
-from mcp_abfall import wcs
+from abfall_mcp_server import wcs
 
 
 def test_stdlib_wird_nicht_ueberschattet():

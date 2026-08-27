@@ -1,8 +1,8 @@
 """MCP-Server fuer Abfall-/Umweltkalender deutscher Staedte und Landkreise.
 
 Start:
-    mcp-abfall                 # stdio (Standard, fuer lokale MCP-Clients)
-    mcp-abfall --http          # Streamable HTTP auf 127.0.0.1:8000
+    abfall-mcp-server                 # stdio (Standard, fuer lokale MCP-Clients)
+    abfall-mcp-server --http          # Streamable HTTP auf 127.0.0.1:8000
 """
 
 from __future__ import annotations
@@ -10,15 +10,20 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import logging
+import os
 import sys
+from pathlib import Path
 from typing import Annotated, Any
 
 from mcp.server.mcpserver import MCPServer
+from mcp.types import ToolAnnotations
 from pydantic import Field
+from starlette.requests import Request
+from starlette.responses import FileResponse, JSONResponse, Response
 
 from . import __version__, geo, registry, resolve, wcs
 
-_LOG = logging.getLogger("mcp_abfall")
+_LOG = logging.getLogger("abfall_mcp_server")
 
 #: Ab diesem Trefferwert wird ein Traeger ungefragt abgefragt. Darunter ist die
 #: Zuordnung Adresse -> Traeger nicht belastbar genug: ein Traeger, der nur
@@ -47,6 +52,55 @@ mcp = MCPServer(
     version=__version__,
     instructions=INSTRUCTIONS,
 )
+
+
+@mcp.custom_route("/health", methods=["GET"], include_in_schema=False)
+async def health(_: Request) -> JSONResponse:
+    """Leichter Bereitschaftstest fuer Container-Orchestratoren."""
+    return JSONResponse({"status": "ok", "version": __version__})
+
+
+def _web_datei(*teile: str) -> Path | None:
+    """Eine gebaute Web-Datei finden, ohne das Web-Verzeichnis zu verlassen."""
+    standard = Path(__file__).resolve().parents[2] / "web" / "out"
+    wurzel = Path(os.environ.get("ABFALL_MCP_WEB_DIR", standard)).resolve()
+    datei = wurzel.joinpath(*teile).resolve()
+    try:
+        datei.relative_to(wurzel)
+    except ValueError:
+        return None
+    return datei if datei.is_file() else None
+
+
+def _web_antwort(*teile: str) -> Response:
+    datei = _web_datei(*teile)
+    if datei is None:
+        return Response(status_code=404)
+    return FileResponse(datei)
+
+
+@mcp.custom_route("/", methods=["GET"], include_in_schema=False)
+async def landingpage(_: Request) -> Response:
+    """Deutsche Landingpage aus dem statischen Next.js-Export."""
+    return _web_antwort("index.html")
+
+
+@mcp.custom_route("/en", methods=["GET"], include_in_schema=False)
+@mcp.custom_route("/en/", methods=["GET"], include_in_schema=False)
+async def landingpage_en(_: Request) -> Response:
+    """Englische Landingpage aus dem statischen Next.js-Export."""
+    return _web_antwort("en", "index.html")
+
+
+@mcp.custom_route("/favicon.ico", methods=["GET"], include_in_schema=False)
+async def favicon(_: Request) -> Response:
+    return _web_antwort("favicon.ico")
+
+
+@mcp.custom_route("/_next/{asset_path:path}", methods=["GET"], include_in_schema=False)
+async def web_asset(request: Request) -> Response:
+    """Nur von Next.js erzeugte Assets ausliefern; MCP-Routen bleiben separat."""
+    return _web_antwort("_next", request.path_params["asset_path"])
 
 
 # --------------------------------------------------------------------------
@@ -151,6 +205,10 @@ def _empty_result_note(result: resolve.FetchResult) -> dict:
         "Ermittelt den zustaendigen Entsorgungstraeger fuer eine deutsche "
         "Adresse und liefert dessen Abfuhrtermine. Erster Anlaufpunkt fuer "
         "Fragen wie 'Wann wird bei mir die Biotonne geleert?'."
+    ),
+    annotations=ToolAnnotations(
+        read_only_hint=True,
+        open_world_hint=True,
     ),
 )
 def abfuhrtermine(
@@ -308,6 +366,10 @@ def abfuhrtermine(
         "Sucht Entsorgungstraeger nach Orts- oder Betriebsnamen, ohne Geocoding. "
         "Nuetzlich, wenn die Adresssuche nichts findet oder der Betrieb bekannt ist."
     ),
+    annotations=ToolAnnotations(
+        read_only_hint=True,
+        open_world_hint=False,
+    ),
 )
 def finde_traeger(
     suchbegriff: Annotated[
@@ -331,6 +393,10 @@ def finde_traeger(
     description=(
         "Zeigt, welche Argumente ein Traeger erwartet, welche Orte als Beispiel "
         "hinterlegt sind und wo sein Portal liegt."
+    ),
+    annotations=ToolAnnotations(
+        read_only_hint=True,
+        open_world_hint=False,
     ),
 )
 def traeger_details(
@@ -362,6 +428,10 @@ def traeger_details(
     description=(
         "Fragt einen Traeger direkt ab - fuer Rueckfragen aus `abfuhrtermine` "
         "oder wenn der Traeger bereits feststeht."
+    ),
+    annotations=ToolAnnotations(
+        read_only_hint=True,
+        open_world_hint=True,
     ),
 )
 def abfuhrtermine_fuer_traeger(
@@ -434,6 +504,10 @@ def abfuhrtermine_fuer_traeger(
 @mcp.tool(
     title="Abdeckung",
     description="Zeigt, wie viele Entsorgungstraeger und Datenquellen erfasst sind.",
+    annotations=ToolAnnotations(
+        read_only_hint=True,
+        open_world_hint=False,
+    ),
 )
 def abdeckung() -> dict:
     providers = registry.load()
@@ -471,7 +545,7 @@ def traeger_liste() -> list[dict]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="mcp-abfall",
+        prog="abfall-mcp-server",
         description="MCP-Server fuer deutsche Abfall-/Umweltkalender.",
     )
     parser.add_argument(
@@ -479,8 +553,17 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Streamable HTTP statt stdio.",
     )
-    parser.add_argument("--host", default="127.0.0.1", help="Nur mit --http.")
-    parser.add_argument("--port", type=int, default=8000, help="Nur mit --http.")
+    parser.add_argument(
+        "--host",
+        default=os.environ.get("ABFALL_MCP_HOST", "127.0.0.1"),
+        help="Nur mit --http.",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=os.environ.get("PORT", os.environ.get("ABFALL_MCP_PORT", "8000")),
+        help="Nur mit --http.",
+    )
     parser.add_argument(
         "--log-level",
         default="WARNING",
@@ -499,9 +582,13 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.http:
-        mcp.settings.host = args.host
-        mcp.settings.port = args.port
-        mcp.run(transport="streamable-http")
+        mcp.run(
+            transport="streamable-http",
+            host=args.host,
+            port=args.port,
+            json_response=True,
+            stateless_http=True,
+        )
     else:
         mcp.run(transport="stdio")
     return 0

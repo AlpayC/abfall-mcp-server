@@ -1,6 +1,6 @@
 [project]
-name = "mcp-abfall"
-# Einzige Quelle der Versionsnummer ist src/mcp_abfall/__init__.py -
+name = "abfall-mcp-server"
+# Einzige Quelle der Versionsnummer ist src/abfall_mcp_server/__init__.py -
 # der Release-Workflow gleicht den Tag dagegen ab.
 dynamic = ["version"]
 description = "MCP-Server fuer Abfall-/Umweltkalender aller deutschen Staedte und Landkreise"
@@ -38,17 +38,17 @@ dependencies = [
 ]
 
 [project.scripts]
-mcp-abfall = "mcp_abfall.server:main"
+abfall-mcp-server = "abfall_mcp_server.server:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "src/mcp_abfall/__init__.py"
+path = "src/abfall_mcp_server/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mcp_abfall"]
+packages = ["src/abfall_mcp_server"]
 
 [dependency-groups]
 dev = ["pytest>=8.0", "ruff>=0.6"]

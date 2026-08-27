@@ -27,8 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import yaml
 
-from mcp_abfall import wcs
-from mcp_abfall.registry import ArgSpec, Provider, normalize, save
+from abfall_mcp_server import wcs
+from abfall_mcp_server.registry import ArgSpec, Provider, _is_address, normalize, save
 
 REPO_ROOT = wcs.WCS_PKG.parents[2]
 DOC_ROOT = REPO_ROOT / "doc"
@@ -340,10 +340,58 @@ def dedupe(providers: list[Provider]) -> list[Provider]:
     return sorted(merged.values(), key=lambda p: (p.title.lower(), p.source))
 
 
+#: Kompakter Trageerindex fuer die Website. Die Seite ist ein statischer
+#: Export und kann die Registry nicht zur Laufzeit lesen, deshalb faellt hier
+#: eine reduzierte Fassung mit ab: nur Name, Datenquelle und Beispielorte, denn
+#: gesucht wird nach dem eigenen Wohnort und nicht nach Argumentnamen.
+WEB_INDEX = Path(__file__).resolve().parents[1] / "web" / "public" / "traeger.json"
+
+
+def save_web_index(providers: list[Provider], path: Path | None = None) -> Path:
+    """Schreibt den schlanken Index, den die Website durchsucht."""
+    target = path or WEB_INDEX
+    target.parent.mkdir(parents=True, exist_ok=True)
+    entries = []
+    for provider in providers:
+        entry: dict = {"t": provider.title, "s": provider.source}
+        if provider.url:
+            entry["u"] = provider.url
+        # Beispielorte sind der eigentliche Suchschluessel: ein Traeger heisst
+        # "Kreis Steinfurt", gesucht wird aber nach "Emsdetten". Adressartige
+        # Beispiele bleiben draussen, die taugen nicht als Ortsname.
+        orte = [
+            # Zusaetze wie "(no street required)" stammen aus den Testfaellen
+            # des Upstreams und sind kein Bestandteil des Ortsnamens.
+            re.sub(r"\s*\([^)]*\)", "", e["name"]).strip()
+            for e in provider.examples
+            if not any(_is_address(part) for part in e["name"].split(","))
+        ]
+        orte = [o for o in orte if o]
+        if orte:
+            entry["o"] = orte[:6]
+        entries.append(entry)
+
+    entries.sort(key=lambda e: e["t"].casefold())
+    payload = {
+        "count": len(entries),
+        "sources": len({e["s"] for e in entries}),
+        "providers": entries,
+    }
+    target.write_text(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
+    )
+    return target
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Baut data/providers.json.")
     ap.add_argument("--country", default="de", help="ISO-Laendercode (Default: de)")
     ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument(
+        "--no-web-index",
+        action="store_true",
+        help="Den Traegerindex fuer die Website nicht mitschreiben.",
+    )
     args = ap.parse_args()
 
     readme = readme_modules(args.country)
@@ -369,6 +417,10 @@ def main() -> int:
         f"  davon mit Beispielorten: {with_examples}\n"
         f"  Quell-Module: {len({p.source for p in providers})}"
     )
+
+    if not args.no_web_index and args.out is None:
+        web = save_web_index(providers)
+        print(f"  Traegerindex fuer die Website: {web} ({web.stat().st_size // 1024} KB)")
     return 0
 
 
