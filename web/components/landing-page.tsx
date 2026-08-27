@@ -2,26 +2,25 @@
 
 import {
   ArrowDown,
-  ArrowRight,
-  CalendarDays,
+  ArrowUpRight,
   Check,
   Clipboard,
-  Database,
   ExternalLink,
   GitBranch,
-  MapPin,
   Moon,
-  Network,
   Search,
   ShieldCheck,
-  Unplug,
   Sun,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
+import { AnimatedShinyText } from "@/components/ui/animated-shiny-text";
+import { BlurFade } from "@/components/ui/blur-fade";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { GridPattern } from "@/components/ui/grid-pattern";
+import { Marquee } from "@/components/ui/marquee";
 import { NumberTicker } from "@/components/ui/number-ticker";
+import { TextAnimate } from "@/components/ui/text-animate";
 import {
   AnimatedSpan,
   Terminal,
@@ -32,441 +31,657 @@ import { cn } from "@/lib/utils";
 type Language = "de" | "en";
 
 const ENDPOINT = "https://abfall-mcp.alpaycelik.dev/mcp";
+const HOST = "abfall-mcp.alpaycelik.dev";
+const REPO = "https://github.com/AlpayC/mcp-abfall";
+const VERSION = "v0.1.0";
+const PROTOCOL = "2025-11-25";
+const PROVIDERS = 995;
+const SOURCES = 150;
+
+/* -------------------------------------------------------------------------
+   Client-Zeilen. Eine Zeile pro Client, damit das Panel kompakt bleibt.
+   ------------------------------------------------------------------------- */
 
 const snippets = {
-  codex: `[mcp_servers.abfall]\nurl = "${ENDPOINT}"`,
-  claude: `{
-  "mcpServers": {
-    "abfall": {
-      "url": "${ENDPOINT}"
-    }
-  }
-}`,
-  json: `{
-  "mcpServers": {
-    "abfall": {
-      "type": "http",
-      "url": "${ENDPOINT}"
-    }
-  }
-}`,
+  Claude: `claude mcp add --transport http abfall ${ENDPOINT}`,
+  Codex: `codex mcp add abfall --url ${ENDPOINT}`,
+  ".mcp.json": `{ "mcpServers": { "abfall": { "url": "${ENDPOINT}" } } }`,
+  Docker: `docker run -p 8000:8000 ghcr.io/alpayc/mcp-abfall:latest`,
   curl: `curl -X POST ${ENDPOINT} \\
   -H "Content-Type: application/json" \\
   -H "Accept: application/json, text/event-stream" \\
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"hello","version":"1.0"}}}'`,
-};
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`,
+} as const;
 
-const tools = [
+type SnippetKey = keyof typeof snippets;
+
+/* -------------------------------------------------------------------------
+   Tool-Signaturen, entsprechend den Schemata aus list_tools.
+   ------------------------------------------------------------------------- */
+
+type Arg = { n: string; t: string; req?: boolean; de: string; en: string };
+
+const tools: { name: string; de: string; en: string; args: Arg[]; call: string }[] = [
   {
     name: "abfuhrtermine",
-    icon: CalendarDays,
-    de: "Findet den zuständigen Träger zu einer Adresse und liefert die nächsten Abfuhrtermine.",
-    en: "Finds the responsible provider for an address and returns upcoming collection dates.",
-    input: 'adresse: "Kirchstraße 5, 48282 Emsdetten"',
+    de: "Ermittelt den zuständigen Träger zu einer Adresse und liefert dessen Abfuhrtermine.",
+    en: "Resolves the responsible authority for an address and returns its collection dates.",
+    args: [
+      { n: "adresse", t: "string", req: true, de: "Adresse oder Ort", en: "Address or town" },
+      { n: "strasse", t: "string", de: "Falls nicht in der Adresse", en: "If not part of the address" },
+      { n: "hausnummer", t: "string", de: "Hausnummer", en: "House number" },
+      { n: "von / bis", t: "string", de: "Zeitraum, JJJJ-MM-TT", en: "Range, YYYY-MM-DD" },
+      { n: "abfallarten", t: "string[]", de: "Teilwörter genügen", en: "Substrings work" },
+      { n: "limit", t: "integer", de: "Standard 25", en: "Default 25" },
+    ],
+    call: `abfuhrtermine({\n  adresse: "Kirchstraße 5, 48282 Emsdetten",\n  abfallarten: ["Bio"]\n})`,
   },
   {
     name: "finde_traeger",
-    icon: Search,
-    de: "Sucht direkt nach Orts-, Landkreis- oder Betriebsnamen, ganz ohne Geocoding.",
-    en: "Searches directly by city, district, or operator name without geocoding.",
-    input: 'suchbegriff: "Kreis Steinfurt"',
+    de: "Sucht Entsorgungsträger nach Orts- oder Betriebsnamen, ohne Geocoding.",
+    en: "Searches waste authorities by place or operator name, without geocoding.",
+    args: [
+      { n: "suchbegriff", t: "string", req: true, de: "Ort, Landkreis oder Betrieb", en: "Town, district or operator" },
+      { n: "limit", t: "integer", de: "Standard 10", en: "Default 10" },
+    ],
+    call: `finde_traeger({ suchbegriff: "Kreis Steinfurt" })`,
   },
   {
     name: "traeger_details",
-    icon: Database,
-    de: "Zeigt Portal, erwartete Argumente, Beispiele und offene Pflichtangaben.",
-    en: "Shows the portal, required arguments, examples, and missing mandatory fields.",
-    input: 'traeger_id: "..."',
+    de: "Zeigt Portal, erwartete Argumente, Vorbelegung und Beispielorte eines Trägers.",
+    en: "Shows one authority's portal, expected arguments, presets and example places.",
+    args: [{ n: "traeger_id", t: "string", req: true, de: "ID aus finde_traeger", en: "ID from finde_traeger" }],
+    call: `traeger_details({ traeger_id: "abfall_io.egst-…" })`,
   },
   {
     name: "abfuhrtermine_fuer_traeger",
-    icon: Network,
-    de: "Fragt einen bekannten Träger gezielt ab und löst dessen Adressdialog auf.",
-    en: "Queries a known provider directly and resolves its address selection flow.",
-    input: 'traeger_id: "...", argumente: { ... }',
+    de: "Fragt einen bekannten Träger gezielt ab — der Weg, um eine Rückfrage zu beantworten.",
+    en: "Queries a known authority directly — the way to answer a follow-up question.",
+    args: [
+      { n: "traeger_id", t: "string", req: true, de: "ID aus finde_traeger", en: "ID from finde_traeger" },
+      { n: "argumente", t: "object", de: "Argumente der Datenquelle", en: "Arguments of the data source" },
+      { n: "adresse", t: "string", de: "Ergänzt Fehlendes", en: "Fills in what is missing" },
+      { n: "von / bis", t: "string", de: "Zeitraum", en: "Range" },
+      { n: "abfallarten", t: "string[]", de: "Nur diese Arten", en: "Only these types" },
+      { n: "limit", t: "integer", de: "Standard 25", en: "Default 25" },
+    ],
+    call: `abfuhrtermine_fuer_traeger({\n  traeger_id: "…",\n  argumente: { ort: "Ahlen" }\n})`,
   },
   {
     name: "abdeckung",
-    icon: MapPin,
-    de: "Gibt einen transparenten Überblick über erfasste Träger und Datenquellen.",
-    en: "Returns a transparent overview of registered providers and data sources.",
-    input: "keine Argumente / no arguments",
+    de: "Zählt erfasste Träger und Datenquellen.",
+    en: "Counts registered authorities and data sources.",
+    args: [],
+    call: `abdeckung()`,
   },
 ];
 
+/* ------------------------------------------------------------------------- */
+
 const copy = {
   de: {
-    nav: ["Verbindung", "Tools", "Über den Server"],
-    eyebrow: "ÖFFENTLICHER MCP-SERVER · DEUTSCHLAND",
-    titleA: "Abfuhrtermine für deinen",
-    titleB: "KI-Assistenten.",
-    intro:
-      "Ein offener MCP-Server verbindet KI-Assistenten mit den Abfallkalendern deutscher Städte und Landkreise — direkt aus den Portalen der zuständigen Entsorgungsträger.",
-    connect: "MCP verbinden",
-    explore: "Tools ansehen",
-    labels: ["Öffentlich", "5 Tools", "1 Resource", "Kein API-Key"],
-    terminalPrompt: "Wann wird bei mir die Biotonne geleert?",
-    terminalCall: "→ abfuhrtermine({ adresse: \"Kirchstraße 5, Emsdetten\" })",
-    terminalResult: "✓ Nächster Termin: Dienstag, 1. September",
-    live: "Live Endpoint",
-    checking: "Status wird geprüft",
-    online: "Betriebsbereit",
-    offline: "Status nicht erreichbar",
-    endpointNote: "Streamable HTTP · Protokoll 2025-11-25",
-    statProviders: "Entsorgungsträger",
-    statSources: "Datenquellen",
-    statTools: "MCP-Tools",
-    connectionEyebrow: "01 / VERBINDUNG",
-    connectionTitle: "In zwei Minuten startklar.",
-    connectionText:
-      "Der Server ist öffentlich erreichbar. Füge den Endpoint zu deinem MCP-Client hinzu — ohne Installation, Konto oder API-Key.",
-    copied: "Kopiert",
+    eyebrow: "Öffentlicher MCP-Server · Deutschland",
+    headline: "Abfuhrtermine für",
+    headlineAccent: "deinen KI-Assistenten.",
+    ctaPrimary: "Server verbinden",
+    ctaSecondary: "Tools ansehen",
+    keys: "API-Keys",
+    scrollHint: "Endpoint, Tools und Abdeckung",
+    connect: "anschluss",
+    connectNote: "Endpoint in den MCP-Client eintragen, Client neu starten. Danach steht der Server als „abfall“ bereit.",
+    lede: "Abfuhrtermine aus den Portalen deutscher Entsorgungsträger — als MCP-Server für KI-Assistenten. Öffentlich, ohne Konto und ohne API-Key.",
+    online: "erreichbar",
+    offline: "nicht erreichbar",
+    checking: "prüfe",
+    traeger: "Träger",
+    quellen: "Quellen",
+    toolsWord: "Tools",
+    resourceWord: "Resource",
+    protokoll: "Protokoll",
     copy: "Kopieren",
-    configHint:
-      "Konfiguration speichern und den Client neu starten. Danach steht der Server als „abfall“ zur Verfügung.",
-    flowEyebrow: "02 / SO FUNKTIONIERT’S",
-    flowTitle: "Eine Frage rein. Verlässliche Termine raus.",
-    flowText:
-      "Zwischen Alltagssprache und kommunalen Portalen liegt ein vorsichtiger Auflösungsprozess. Unsichere Zuordnungen werden nicht versteckt.",
-    flow: [
-      ["Adresse", "Der Assistent übergibt Ort, Straße oder vollständige Adresse."],
-      ["Geocoding", "Nominatim normalisiert den Ort und prüft Postleitzahl sowie Straße."],
-      ["Zuständigkeit", "Der passende Entsorgungsträger wird aus 995 Einträgen ermittelt."],
-      ["Portal", "Die originale kommunale Datenquelle wird live abgefragt."],
-      ["Termine", "Sortierte Abfuhrdaten kommen strukturiert zum Assistenten zurück."],
+    copied: "Kopiert",
+    built: "Datenbasis: hacs_waste_collection_schedule · MIT",
+    demo: "Beispiel",
+    ask: "Wann wird bei mir die Biotonne geleert?",
+    call: '→ abfuhrtermine({ adresse: "Kirchstraße 5, Emsdetten" })',
+    result: "✓ Dienstag, 1. September · Biomüll · EGST Steinfurt",
+    toolsLabel: "tools",
+    toolsNote: "Tool- und Feldnamen sind deutsch, weil die Domäne es ist. Karte aufklappen für die Signatur.",
+    field: "Feld",
+    fields: "Felder",
+    noArgs: "ohne Argumente",
+    schema: "Signatur",
+    resourceLabel: "resource",
+    resourceText: "Alle erfassten Träger als Liste mit ID, Name und Portal.",
+    coverage: "abdeckung",
+    coverageNote: "Deutschland hat keine bundesweite Abfall-Schnittstelle. Rund 400 Träger betreiben eigene Portale hinter einer Handvoll Plattformen.",
+    finderPlaceholder: "Verzeichnis filtern — Träger, Kreis oder Stadt …",
+    finderHint: "Zuständig ist meist der Landkreis, nicht die Gemeinde. Etwa Steinfurt, Köln oder AWM.",
+    finderLoading: "Verzeichnis wird geladen …",
+    finderEmpty: "Kein Träger heisst",
+    finderEmptyNote: "Das Verzeichnis führt Trägernamen. Wohnst du in einer kleinen Gemeinde, suche nach deinem Landkreis — oder frag den Server direkt, der löst die Adresse selbst auf.",
+    finderOf: "von",
+    finderMatch: "Treffer",
+    finderMatches: "Treffer",
+    finderAll: "Träger, alphabetisch",
+    resolve: "auflösung",
+    resolveNote: "Zwischen Alltagssprache und kommunalem Portal liegt eine Kette, die an jeder Stelle abbrechen darf.",
+    chain: [
+      ["Adresse", "Ort, Straße oder vollständige Anschrift."],
+      ["Geocoding", "Nominatim prüft PLZ und Ort."],
+      ["Zuständigkeit", "Passender Träger aus 995."],
+      ["Portal", "Kommunale Quelle, live."],
+      ["Termine", "Sortiert zurück."],
     ],
-    principleTitle: "Nachfragen statt raten.",
-    principleText:
-      "Liegt eine Zuordnung unter der Sicherheitsschwelle, liefert der Server konkrete Auswahlmöglichkeiten zurück. So wird aus einer falschen Adresse nicht unbemerkt ein plausibel wirkender Kalender.",
-    toolsEyebrow: "02 / TOOLS & RESOURCE",
-    toolsTitle: "Klein genug, um klar zu bleiben.",
-    toolsText:
-      "Fünf fokussierte Tools decken den Weg von der freien Adressfrage bis zur gezielten Provider-Abfrage ab.",
-    invoke: "Beispiel",
-    resource: "Resource",
-    resourceText:
-      "Alle erfassten Entsorgungsträger als maschinenlesbare Liste mit ID, Name und Portal.",
-    coverageEyebrow: "03 / ÜBER DEN SERVER",
-    coverageTitle: "Kommunal organisiert. Gemeinsam zugänglich.",
-    coverageText:
-      "Deutschland hat keine zentrale Abfall-API. Dieser Server vereinheitlicht 150 unterschiedliche Datenquellen hinter einer einzigen, offenen Schnittstelle.",
-    coverageCards: [
-      ["Direkt", "Adresse wird eindeutig erkannt und Termine werden sofort geliefert."],
-      ["Mit Rückfrage", "Der Assistent bittet um Ortsteil, Straße oder eine Auswahl."],
-      ["Transparent", "Quelle, Portal und verwendete Argumente bleiben in der Antwort sichtbar."],
-    ],
-    openTitle: "Offen gebaut. Selbst hostbar.",
-    openText:
-      "Quellcode, Container und Registry-Eintrag sind öffentlich. Der gehostete Endpoint ist der schnellste Start; für volle Kontrolle kannst du denselben Server selbst betreiben.",
-    source: "Quellcode ansehen",
-    registry: "MCP Registry",
-    finalEyebrow: "DEINE TONNE WARTET NICHT",
-    finalTitle: "Gib deinem Assistenten einen Kalender.",
-    finalText: "Ein Endpoint. Fünf Tools. Fast tausend kommunale Entsorgungsträger.",
+    ruleTitle: "Nachfragen statt raten",
+    ruleText: "Ist eine Zuordnung nicht sicher genug, kommen konkrete Auswahlmöglichkeiten zurück statt eines Ergebnisses. Ein falsch geratener Ort liefert sonst klaglos den Kalender der Nachbargemeinde — falsch, aber unauffällig.",
     footer: "Offener MCP-Server für deutsche Abfuhrtermine.",
   },
   en: {
-    nav: ["Connect", "Tools", "About"],
-    eyebrow: "PUBLIC MCP SERVER · GERMANY",
-    titleA: "Collection dates for your",
-    titleB: "AI assistant.",
-    intro:
-      "An open MCP server connects AI assistants to waste collection calendars across Germany — sourced directly from the responsible municipal providers.",
-    connect: "Connect MCP",
-    explore: "Explore tools",
-    labels: ["Public", "5 tools", "1 resource", "No API key"],
-    terminalPrompt: "When will my organic waste be collected?",
-    terminalCall: "→ abfuhrtermine({ adresse: \"Kirchstraße 5, Emsdetten\" })",
-    terminalResult: "✓ Next collection: Tuesday, September 1",
-    live: "Live endpoint",
-    checking: "Checking status",
-    online: "Operational",
-    offline: "Status unavailable",
-    endpointNote: "Streamable HTTP · Protocol 2025-11-25",
-    statProviders: "waste providers",
-    statSources: "data sources",
-    statTools: "MCP tools",
-    connectionEyebrow: "01 / CONNECTION",
-    connectionTitle: "Ready in two minutes.",
-    connectionText:
-      "The server is publicly available. Add the endpoint to your MCP client — no installation, account, or API key required.",
-    copied: "Copied",
+    eyebrow: "Public MCP server · Germany",
+    headline: "Collection dates for",
+    headlineAccent: "your AI assistant.",
+    ctaPrimary: "Connect the server",
+    ctaSecondary: "See the tools",
+    keys: "API keys",
+    scrollHint: "Endpoint, tools and coverage",
+    connect: "connect",
+    connectNote: "Add the endpoint to your MCP client and restart it. The server then shows up as “abfall”.",
+    lede: "Waste collection dates from the portals of German municipal authorities — as an MCP server for AI assistants. Public, no account, no API key.",
+    online: "reachable",
+    offline: "unreachable",
+    checking: "checking",
+    traeger: "authorities",
+    quellen: "sources",
+    toolsWord: "tools",
+    resourceWord: "resource",
+    protokoll: "protocol",
     copy: "Copy",
-    configHint:
-      "Save the configuration and restart your client. The server will then be available as “abfall”.",
-    flowEyebrow: "02 / HOW IT WORKS",
-    flowTitle: "One question in. Reliable dates out.",
-    flowText:
-      "A careful resolution process sits between natural language and municipal portals. Uncertain matches are never hidden.",
-    flow: [
-      ["Address", "The assistant sends a city, street, or complete address."],
-      ["Geocoding", "Nominatim normalizes the location and validates postcode and street."],
-      ["Responsibility", "The matching provider is selected from 995 entries."],
-      ["Portal", "The original municipal data source is queried live."],
-      ["Dates", "Sorted collection dates return to the assistant as structured data."],
+    copied: "Copied",
+    built: "Data source: hacs_waste_collection_schedule · MIT",
+    demo: "Example",
+    ask: "When is my organic waste collected?",
+    call: '→ abfuhrtermine({ adresse: "Kirchstraße 5, Emsdetten" })',
+    result: "✓ Tuesday, 1 September · organic waste · EGST Steinfurt",
+    toolsLabel: "tools",
+    toolsNote: "Tool and field names are German because the domain is. Expand a card for the signature.",
+    field: "field",
+    fields: "fields",
+    noArgs: "no arguments",
+    schema: "Signature",
+    resourceLabel: "resource",
+    resourceText: "Every registered authority with ID, name and portal.",
+    coverage: "coverage",
+    coverageNote: "Germany has no nationwide waste API. Around 400 authorities run their own portals on top of a handful of platforms.",
+    finderPlaceholder: "Filter the directory — authority, district or city …",
+    finderHint: "Responsibility usually sits with the district, not the town. Try Steinfurt, Köln or AWM.",
+    finderLoading: "Loading directory …",
+    finderEmpty: "No authority is called",
+    finderEmptyNote: "The directory lists authority names. If you live in a small municipality, search for your district — or just ask the server, which resolves the address itself.",
+    finderOf: "of",
+    finderMatch: "match",
+    finderMatches: "matches",
+    finderAll: "authorities, alphabetical",
+    resolve: "resolution",
+    resolveNote: "Between plain language and a municipal portal sits a chain that may stop at any step.",
+    chain: [
+      ["Address", "Town, street or full address."],
+      ["Geocoding", "Nominatim validates postcode and place."],
+      ["Responsibility", "The matching authority out of 995."],
+      ["Portal", "Municipal source, live."],
+      ["Dates", "Sorted, back to the assistant."],
     ],
-    principleTitle: "Ask instead of guessing.",
-    principleText:
-      "When a match falls below the confidence threshold, the server returns concrete choices. A wrong address can never silently turn into a plausible-looking calendar.",
-    toolsEyebrow: "02 / TOOLS & RESOURCE",
-    toolsTitle: "Small enough to stay clear.",
-    toolsText:
-      "Five focused tools cover the path from a free-form address question to a targeted provider query.",
-    invoke: "Example",
-    resource: "Resource",
-    resourceText:
-      "Every registered waste provider as a machine-readable list with ID, name, and portal.",
-    coverageEyebrow: "03 / ABOUT",
-    coverageTitle: "Organized locally. Accessible together.",
-    coverageText:
-      "Germany has no central waste collection API. This server unifies 150 different data sources behind a single open interface.",
-    coverageCards: [
-      ["Direct", "The address resolves clearly and dates are returned immediately."],
-      ["With a question", "The assistant asks for a district, street, or explicit choice."],
-      ["Transparent", "Source, portal, and arguments used remain visible in the response."],
-    ],
-    openTitle: "Openly built. Self-hostable.",
-    openText:
-      "Source code, container, and registry entry are public. The hosted endpoint is the fastest start; run the same server yourself when you need full control.",
-    source: "View source",
-    registry: "MCP Registry",
-    finalEyebrow: "YOUR BIN WON’T WAIT",
-    finalTitle: "Give your assistant a calendar.",
-    finalText: "One endpoint. Five tools. Nearly one thousand municipal waste providers.",
+    ruleTitle: "Ask instead of guessing",
+    ruleText: "When a match is not confident enough, the server returns concrete options instead of a result. A wrongly guessed town would otherwise cheerfully return the neighbouring municipality's calendar — wrong, but unremarkable.",
     footer: "Open MCP server for German waste collection dates.",
   },
 } as const;
 
-const tabLabels = { codex: "Codex", claude: "Claude", json: "JSON", curl: "cURL" };
-type SnippetKey = keyof typeof snippets;
+/* ------------------------------------------------------------------------- */
 
 function CopyButton({ value, language }: { value: string; language: Language }) {
   const [copied, setCopied] = useState(false);
   const t = copy[language];
-
-  async function handleCopy() {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1800);
-  }
-
   return (
-    <button className="copy-button" onClick={handleCopy} type="button">
-      {copied ? <Check size={15} /> : <Clipboard size={15} />}
+    <button
+      className="copy"
+      type="button"
+      onClick={async () => {
+        await navigator.clipboard.writeText(value);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1600);
+      }}
+    >
+      {copied ? <Check size={12} /> : <Clipboard size={12} />}
       {copied ? t.copied : t.copy}
     </button>
   );
 }
 
-function Status({ language }: { language: Language }) {
-  const [status, setStatus] = useState<"checking" | "online" | "offline">("checking");
-  const t = copy[language];
-
+function useHealth() {
+  const [state, setState] = useState<"checking" | "online" | "offline">("checking");
   useEffect(() => {
     let active = true;
     fetch("/health", { signal: AbortSignal.timeout(5000) })
-      .then((response) => {
-        if (active) setStatus(response.ok ? "online" : "offline");
-      })
-      .catch(() => {
-        if (active) setStatus("offline");
-      });
+      .then((r) => active && setState(r.ok ? "online" : "offline"))
+      .catch(() => active && setState("offline"));
     return () => {
       active = false;
     };
   }, []);
-
-  const label = status === "online" ? t.online : status === "offline" ? t.offline : t.checking;
-  return (
-    <span className={cn("live-status", `is-${status}`)}>
-      <span className="status-dot" />
-      {label}
-    </span>
-  );
+  return state;
 }
 
-function ConnectionPanel({ language }: { language: Language }) {
-  const [activeTab, setActiveTab] = useState<SnippetKey>("codex");
-  const t = copy[language];
-  const snippet = snippets[activeTab];
-
+function ConnectPanel({ language }: { language: Language }) {
+  const [tab, setTab] = useState<SnippetKey>("Claude");
   return (
-    <div className="connection-panel">
-      <div className="connection-tabs" role="tablist" aria-label="MCP clients">
-        {(Object.keys(tabLabels) as SnippetKey[]).map((key) => (
+    <div className="panel">
+      <BorderBeam colorFrom="var(--primary)" colorTo="var(--accent)" duration={10} size={80} />
+      <div className="panel-top">
+        <span className="lights"><i /><i /><i /></span>
+        <span className="panel-url">{HOST}/mcp</span>
+      </div>
+      <div className="tabs" role="tablist" aria-label="MCP clients">
+        {(Object.keys(snippets) as SnippetKey[]).map((key) => (
           <button
-            aria-selected={activeTab === key}
-            className={cn("connection-tab", activeTab === key && "is-active")}
+            aria-selected={tab === key}
+            className={cn("tab", tab === key && "is-active")}
             key={key}
-            onClick={() => setActiveTab(key)}
+            onClick={() => setTab(key)}
             role="tab"
             type="button"
           >
-            {tabLabels[key]}
+            {key}
           </button>
         ))}
       </div>
-      <div className="code-window">
-        <div className="code-window-topline">
-          <span>{activeTab === "codex" ? "~/.codex/config.toml" : activeTab}</span>
-          <CopyButton value={snippet} language={language} />
-        </div>
-        <pre><code>{snippet}</code></pre>
+      <div className="panel-body">
+        <pre><code>{snippets[tab]}</code></pre>
+        <CopyButton value={snippets[tab]} language={language} />
       </div>
-      <p className="config-hint"><Check size={16} aria-hidden="true" />{t.configHint}</p>
+    </div>
+  );
+}
+
+/* --- Trägerindex ---------------------------------------------------------- */
+
+type Entry = { t: string; s: string; o?: string[] };
+
+function fold(v: string) {
+  return v
+    .toLowerCase()
+    .replaceAll("ä", "ae")
+    .replaceAll("ö", "oe")
+    .replaceAll("ü", "ue")
+    .replaceAll("ß", "ss")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
+
+function Mark({ text, needle }: { text: string; needle: string }) {
+  const at = fold(text).indexOf(needle);
+  if (at < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at)}
+      <mark>{text.slice(at, at + needle.length)}</mark>
+      {text.slice(at + needle.length)}
+    </>
+  );
+}
+
+function Finder({ language }: { language: Language }) {
+  const t = copy[language];
+  const [query, setQuery] = useState("");
+  const [entries, setEntries] = useState<Entry[] | null>(null);
+  const asked = useRef(false);
+
+  // Das Verzeichnis wird sofort geladen: eine leere Liste waere eine
+  // schlechtere Auskunft als die ersten Eintraege.
+  useEffect(() => {
+    if (asked.current) return;
+    asked.current = true;
+    fetch("/traeger.json")
+      .then((r) => r.json())
+      .then((d) => setEntries(d.providers as Entry[]))
+      .catch(() => setEntries([]));
+  }, []);
+
+  const needle = fold(query.trim());
+
+  const hits = useMemo(() => {
+    if (!entries) return [];
+    if (needle.length < 2) return entries.map((e) => ({ e, rank: 0, place: undefined }));
+    const out: { e: Entry; rank: number; place?: string }[] = [];
+    for (const e of entries) {
+      const title = fold(e.t);
+      let rank = title.startsWith(needle) ? 1 : title.includes(needle) ? 3 : 99;
+      let place: string | undefined;
+      for (const o of e.o ?? []) {
+        const f = fold(o);
+        if (!f.includes(needle)) continue;
+        // Ein Treffer auf dem Beispielort wiegt schwerer: gesucht wird der
+        // eigene Wohnort, nicht der Name des Betriebs.
+        const r = f.startsWith(needle) ? 0 : 2;
+        if (r < rank) rank = r;
+        place ??= o;
+      }
+      if (rank < 99) out.push({ e, rank, place });
+    }
+    out.sort((a, b) => a.rank - b.rank || a.e.t.localeCompare(b.e.t));
+    return out;
+  }, [entries, needle]);
+
+  const shown = hits.slice(0, 6);
+  const searching = needle.length >= 2;
+
+  return (
+    <div>
+      <div className="finder">
+        <Search size={15} aria-hidden="true" />
+        <input
+          aria-label={t.finderPlaceholder}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t.finderPlaceholder}
+          type="text"
+          value={query}
+        />
+        {query && (
+          <button aria-label="clear" onClick={() => setQuery("")} type="button">✕</button>
+        )}
+      </div>
+
+      {entries === null ? (
+        <p className="note">{t.finderLoading}</p>
+      ) : shown.length > 0 ? (
+        <>
+          <ul className="hits">
+            {shown.map(({ e, place }) => (
+              <li className="hit" key={`${e.t}·${e.s}`}>
+                <span className="hit-name">
+                  {searching ? <Mark text={e.t} needle={needle} /> : e.t}
+                </span>
+                <span className="hit-src">{e.s}</span>
+                {place && (
+                  <span className="hit-place"><Mark text={place} needle={needle} /></span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="note">
+            {!searching
+              ? `${entries.length} ${t.finderAll} — ${t.finderHint}`
+              : hits.length > shown.length
+                ? `${shown.length} ${t.finderOf} ${hits.length} ${t.finderMatches}`
+                : `${hits.length} ${hits.length === 1 ? t.finderMatch : t.finderMatches}`}
+          </p>
+        </>
+      ) : (
+        <p className="note">
+          {t.finderEmpty} <b>{query.trim()}</b>. {t.finderEmptyNote}
+        </p>
+      )}
     </div>
   );
 }
 
 function ThemeToggle() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
-
   useEffect(() => {
-    const timer = window.setTimeout(
-      () =>
-        setTheme(
-          document.documentElement.classList.contains("dark") ? "dark" : "light",
-        ),
+    const id = window.setTimeout(
+      () => setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light"),
       0,
     );
-    return () => window.clearTimeout(timer);
+    return () => window.clearTimeout(id);
   }, []);
-
-  function toggleTheme() {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.classList.toggle("dark", next === "dark");
-    document.documentElement.style.colorScheme = next;
-    localStorage.setItem("theme", next);
-  }
-
   return (
     <button
       aria-label="Toggle theme"
-      className="theme-toggle"
-      onClick={toggleTheme}
+      className="chip chip-icon"
+      onClick={() => {
+        const next = theme === "dark" ? "light" : "dark";
+        setTheme(next);
+        document.documentElement.classList.toggle("dark", next === "dark");
+        document.documentElement.style.colorScheme = next;
+        localStorage.setItem("theme", next);
+      }}
       type="button"
     >
-      {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+      {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
     </button>
   );
 }
 
+function Head({ label, count }: { label: string; count?: string }) {
+  return (
+    <div className="sec-head">
+      <h2>{label}</h2>
+      {count && <span className="sec-count">{count}</span>}
+    </div>
+  );
+}
+
+const bandNames = [
+  "AWB Köln", "Stadtreinigung Hamburg", "Berliner Stadtreinigungsbetriebe",
+  "Kreis Steinfurt", "AWM München", "Bremer Stadtreinigung", "EBU Ulm",
+  "ZKE Saarbrücken", "AWG Wuppertal", "Stadtreinigung Dresden",
+  "Abfallwirtschaftsbetriebe Münster", "EDG Entsorgung Dortmund",
+  "Landkreis Rosenheim", "ART Trier", "Kreis Gütersloh GEG",
+  "Abfallwirtschaft Stadt Nürnberg", "SAB Magdeburg", "sds Schwerin",
+];
+
+/* ------------------------------------------------------------------------- */
+
 export function LandingPage({ language }: { language: Language }) {
   const t = copy[language];
-  const localePath = language === "de" ? "/en/" : "/";
-  const localeLabel = language === "de" ? "EN" : "DE";
+  const health = useHealth();
+  const other = language === "de" ? "/en/" : "/";
+  const otherLabel = language === "de" ? "EN" : "DE";
 
   useEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
 
   return (
-    <div className="site-shell" lang={language}>
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="Abfall MCP home">
-          <span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>
-          <span>ABFALL</span><span className="brand-slash">{"//MCP"}</span>
-        </a>
-        <nav className="desktop-nav" aria-label="Primary navigation">
-          {t.nav.map((item, index) => (
-            <a href={["#connection", "#tools", "#about"][index]} key={item}>{item}</a>
-          ))}
-        </nav>
-        <div className="header-actions">
-          <a className="language-switch" href={localePath}>
-            <span>{language.toUpperCase()}</span><ArrowRight size={13} aria-hidden="true" /><strong>{localeLabel}</strong>
-          </a>
-          <ThemeToggle />
-          <a className="github-link" href="https://github.com/AlpayC/mcp-abfall" target="_blank" rel="noreferrer" aria-label="GitHub repository"><GitBranch size={18} /></a>
+    <div className="doc" lang={language}>
+      <header className="bar">
+        <div className="wrap bar-in">
+          <a className="mark" href="#top"><span>abfall</span><span>/mcp</span></a>
+          <div className="bar-actions">
+            <a className="chip" href={other}>{otherLabel}</a>
+            <ThemeToggle />
+            <a aria-label="GitHub" className="chip chip-icon" href={REPO} rel="noreferrer" target="_blank">
+              <GitBranch size={13} />
+            </a>
+          </div>
         </div>
       </header>
 
-      <main id="top">
-        <section className="hero section-frame">
-          <AnimatedGridPattern className="hero-grid" maxOpacity={0.13} numSquares={22} width={56} height={56} duration={5} />
-          <div className="hero-copy">
-            <div className="eyebrow"><span className="eyebrow-pulse" />{t.eyebrow}</div>
-            <h1>{t.titleA}<span>{t.titleB}</span></h1>
-            <p className="hero-intro">{t.intro}</p>
-            <div className="hero-actions">
-              <a className="primary-button" href="#connection"><Unplug size={17} />{t.connect}<ArrowDown size={16} /></a>
-              <a className="text-button" href="#tools">{t.explore}<ArrowRight size={16} /></a>
+      <main className="wrap" id="top">
+        <section className="masthead">
+          <span className="glow" aria-hidden="true" />
+          <GridPattern className="hero-grid" width={64} height={64} />
+
+          <div className="badge-row">
+            <span className={cn("status-pill", `is-${health}`)}>
+              <span className="ping" />
+              <AnimatedShinyText>
+                {health === "online" ? t.online : health === "offline" ? t.offline : t.checking}
+              </AnimatedShinyText>
+            </span>
+            <span className="label-mono">{t.eyebrow} · {VERSION}</span>
+          </div>
+
+          <h1>
+            <TextAnimate as="span" by="word" animation="blurInUp" startOnView={false} className="block">
+              {t.headline}
+            </TextAnimate>
+            <span className="grad">{t.headlineAccent}</span>
+          </h1>
+
+          <p className="lede">{t.lede}</p>
+
+          <div className="cta-row">
+            <a className="btn btn-primary" href="#connect">
+              {t.ctaPrimary}
+              <ArrowUpRight size={16} />
+            </a>
+            <a className="btn btn-ghost" href="#tools">
+              {t.ctaSecondary}
+              <ArrowDown size={16} />
+            </a>
+            <span className="icon-row">
+              <a aria-label="GitHub" className="icon-btn" href={REPO} rel="noreferrer" target="_blank">
+                <GitBranch size={18} strokeWidth={1.75} />
+              </a>
+              <a aria-label="MCP Registry" className="icon-btn" href="https://registry.modelcontextprotocol.io/" rel="noreferrer" target="_blank">
+                <ExternalLink size={18} strokeWidth={1.75} />
+              </a>
+            </span>
+          </div>
+
+          <dl className="stats">
+            <div className="stat">
+              <dd><NumberTicker value={PROVIDERS} /></dd>
+              <dt>{t.traeger}</dt>
             </div>
-            <div className="badge-row" aria-label="Server facts">
-              {t.labels.map((label, index) => <span key={label}>{index === 0 && <span className="badge-dot" />}{label}</span>)}
+            <div className="stat">
+              <dd><NumberTicker value={SOURCES} /></dd>
+              <dt>{t.quellen}</dt>
             </div>
-          </div>
-
-          <div className="hero-demo">
-            <div className="terminal-label"><span>ASSISTANT / MCP</span><span className="terminal-id">01</span></div>
-            <Terminal className="hero-terminal" sequence startOnView={false}>
-              <TypingAnimation className="terminal-question" duration={24} startOnView={false}>{`› ${t.terminalPrompt}`}</TypingAnimation>
-              <AnimatedSpan className="terminal-call">{t.terminalCall}</AnimatedSpan>
-              <AnimatedSpan className="terminal-result">{t.terminalResult}</AnimatedSpan>
-            </Terminal>
-            <div className="endpoint-card">
-              <BorderBeam colorFrom="var(--primary)" colorTo="var(--accent)" duration={8} size={70} />
-              <div className="endpoint-head"><span>{t.live}</span><Status language={language} /></div>
-              <div className="endpoint-value"><code>{ENDPOINT}</code><CopyButton value={ENDPOINT} language={language} /></div>
-              <span className="endpoint-note">{t.endpointNote}</span>
+            <div className="stat">
+              <dd>5</dd>
+              <dt>{t.toolsWord}</dt>
             </div>
+            <div className="stat">
+              <dd>0</dd>
+              <dt>{t.keys}</dt>
+            </div>
+          </dl>
+
+          <div className="scroll-hint">
+            <ArrowDown size={14} />
+            <span className="label-mono">{t.scrollHint}</span>
+            <span className="line" />
           </div>
         </section>
 
-        <section className="stats-strip" aria-label="Coverage statistics">
-          <div><strong><NumberTicker value={995} /></strong><span>{t.statProviders}</span></div>
-          <div><strong><NumberTicker value={150} /></strong><span>{t.statSources}</span></div>
-          <div><strong><NumberTicker value={5} /></strong><span>{t.statTools}</span></div>
-          <div className="stats-protocol"><strong>2025-11-25</strong><span>MCP protocol</span></div>
-        </section>
+        <BlurFade delay={0.03}>
+          <section className="sec" id="connect">
+            <Head label={t.connect} count={PROTOCOL} />
+            <p className="sec-note">{t.connectNote}</p>
+            <ConnectPanel language={language} />
+            <span className="built">
+              <AnimatedShinyText>{t.built}</AnimatedShinyText>
+            </span>
+          </section>
+        </BlurFade>
 
-        <section className="content-section section-frame" id="connection">
-          <div className="section-intro sticky-intro"><span className="section-eyebrow">{t.connectionEyebrow}</span><h2>{t.connectionTitle}</h2><p>{t.connectionText}</p></div>
-          <ConnectionPanel language={language} />
-        </section>
+        <BlurFade delay={0.04}>
+          <section className="sec">
+            <Head label={t.demo} />
+            <div className="demo">
+              <Terminal className="demo-term" sequence startOnView>
+                <TypingAnimation className="t-ask" duration={26} startOnView={false}>
+                  {`› ${t.ask}`}
+                </TypingAnimation>
+                <AnimatedSpan className="t-call">{t.call}</AnimatedSpan>
+                <AnimatedSpan className="t-ok">{t.result}</AnimatedSpan>
+              </Terminal>
+            </div>
+          </section>
+        </BlurFade>
 
-        <section className="tools-section section-frame" id="tools">
-          <div className="section-intro wide-intro"><span className="section-eyebrow">{t.toolsEyebrow}</span><h2>{t.toolsTitle}</h2><p>{t.toolsText}</p></div>
-          <div className="tool-list">
-            {tools.map((tool, index) => {
-              const Icon = tool.icon;
-              return <article className="tool-row" key={tool.name}><span className="tool-index">0{index + 1}</span><div className="tool-icon"><Icon size={21} strokeWidth={1.8} /></div><div className="tool-copy"><h3>{tool.name}</h3><p>{tool[language]}</p></div><div className="tool-example"><span>{t.invoke}</span><code>{tool.input}</code></div></article>;
-            })}
-          </div>
-          <article className="resource-card"><div className="resource-badge">R</div><div><span>{t.resource}</span><h3>abfall://traeger</h3><p>{t.resourceText}</p></div><Database size={42} strokeWidth={1.2} /></article>
-        </section>
+        <BlurFade delay={0.08}>
+          <section className="sec" id="tools">
+            <Head label={t.toolsLabel} count="5" />
+            <p className="sec-note">{t.toolsNote}</p>
+            <div className="cards">
+              {tools.map((tool) => (
+                <details className="card" key={tool.name}>
+                  <summary>
+                    <span className="card-name">{tool.name}</span>
+                    <p className="card-desc">{tool[language]}</p>
+                    <span className="card-foot">
+                      <span className="tag">
+                        {tool.args.length === 0
+                          ? t.noArgs
+                          : `${tool.args.length} ${tool.args.length === 1 ? t.field : t.fields}`}
+                      </span>
+                      <span className="card-more">{t.schema}</span>
+                    </span>
+                  </summary>
 
-        <section className="about-section section-frame" id="about">
-          <div className="section-intro compact-intro"><span className="section-eyebrow">{t.coverageEyebrow}</span><h2>{t.coverageTitle}</h2><p>{t.coverageText}</p></div>
-          <div className="about-grid">
-            <article>
-              <div className="about-icon"><ShieldCheck size={21} /></div>
-              <span>CONFIDENCE FIRST</span>
-              <h3>{t.principleTitle}</h3>
-              <p>{t.principleText}</p>
-            </article>
-            <article>
-              <div className="about-icon"><Network size={21} /></div>
-              <span>995 × 150</span>
-              <h3>{t.coverageCards[2][0]}</h3>
-              <p>{t.coverageCards[2][1]}</p>
-            </article>
-            <article>
-              <div className="about-icon"><GitBranch size={21} /></div>
-              <span>OPEN SOURCE · MIT</span>
-              <h3>{t.openTitle}</h3>
-              <p>{t.openText}</p>
-              <div className="about-links"><a href="https://github.com/AlpayC/mcp-abfall" target="_blank" rel="noreferrer">{t.source}<ExternalLink size={13} /></a><a href="https://registry.modelcontextprotocol.io/" target="_blank" rel="noreferrer">{t.registry}<ExternalLink size={13} /></a></div>
-            </article>
-          </div>
-        </section>
+                  {tool.args.length > 0 && (
+                    <div className="args">
+                      {tool.args.map((a) => (
+                        <div className="arg" key={a.n}>
+                          <span className="arg-name">
+                            {a.n}{a.req && <span className="arg-req"> *</span>}
+                          </span>
+                          <span className="arg-type">{a.t}</span>
+                          <span className="arg-desc">{a[language]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <code className="call">{tool.call}</code>
+                </details>
+              ))}
+
+              {/* Eine Resource hat keine Signatur - also auch nichts zum Aufklappen. */}
+              <div className="card">
+                <span className="card-name">abfall://traeger</span>
+                <p className="card-desc">{t.resourceText}</p>
+                <span className="card-foot">
+                  <span className="tag">{t.resourceWord}</span>
+                </span>
+              </div>
+            </div>
+          </section>
+        </BlurFade>
+
+        <BlurFade delay={0.12}>
+          <section className="sec" id="coverage">
+            <Head label={t.coverage} count={`${PROVIDERS} × ${SOURCES}`} />
+            <p className="sec-note">{t.coverageNote}</p>
+            <Finder language={language} />
+            <div className="band">
+              <Marquee pauseOnHover style={{ ["--duration" as string]: "46s" }}>
+                {bandNames.map((n) => <span className="band-item" key={n}>{n}</span>)}
+              </Marquee>
+            </div>
+          </section>
+        </BlurFade>
+
+        <BlurFade delay={0.16}>
+          <section className="sec">
+            <Head label={t.resolve} />
+            <p className="sec-note">{t.resolveNote}</p>
+            <ol className="chain">
+              {t.chain.map(([step, text]) => (
+                <li key={step}><dt>{step}</dt><dd>{text}</dd></li>
+              ))}
+            </ol>
+            <div className="rule">
+              <ShieldCheck size={17} aria-hidden="true" />
+              <div>
+                <h3>{t.ruleTitle}</h3>
+                <p>{t.ruleText}</p>
+              </div>
+            </div>
+          </section>
+        </BlurFade>
       </main>
 
-      <footer className="site-footer section-frame">
-        <div className="brand footer-brand"><span className="brand-mark" aria-hidden="true"><span /><span /><span /></span><span>ABFALL</span><span className="brand-slash">{"//MCP"}</span></div>
-        <p>{t.footer}</p>
-        <div><a href="/health">Status</a><a href={ENDPOINT}>Endpoint</a><a href="https://github.com/AlpayC/mcp-abfall" target="_blank" rel="noreferrer">GitHub</a><a href={localePath}>{localeLabel}</a></div>
+      <footer className="wrap foot">
+        <span>{t.footer}</span>
+        <div className="foot-links">
+          <a href={REPO} rel="noreferrer" target="_blank">GitHub</a>
+          <a href="/health">/health</a>
+          <a href="https://registry.modelcontextprotocol.io/" rel="noreferrer" target="_blank">Registry</a>
+          <a href={other}>{otherLabel}</a>
+        </div>
       </footer>
     </div>
   );

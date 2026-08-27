@@ -66,9 +66,9 @@ jobs:
 
       - name: Check for drift
         run: |
-          if ! git diff --quiet -- data/providers.json; then
+          if ! git diff --quiet -- data/providers.json web/public/traeger.json; then
             echo "::error file=data/providers.json::The registry does not match the submodule state. Please run 'uv run python scripts/build_registry.py' and commit the result."
-            git diff --stat -- data/providers.json
+            git diff --stat -- data/providers.json web/public/traeger.json
             exit 1
           fi
           echo "Registry is up to date."
