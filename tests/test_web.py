@@ -68,3 +68,29 @@ def test_alle_tools_stehen_auf_der_seite():
     genannt = {name for name, _ in _page_entries()}
     fehlt = vorhanden - genannt
     assert not fehlt, f"Auf der Seite fehlen: {sorted(fehlt)}"
+
+
+def test_versionsnummer_ist_ueberall_dieselbe():
+    """Die Version steht an drei Stellen und muss zusammenpassen.
+
+    __init__.py ist die Quelle, an der sich der Release-Workflow orientiert;
+    server.json meldet sie an die MCP-Registry, die Website zeigt sie an. Laufen
+    sie auseinander, bricht das Release erst beim Tag-Abgleich ab - oder, noch
+    unangenehmer, die Seite wirbt mit einer Version, die es nicht gibt.
+    """
+    import json
+
+    from abfall_mcp_server import __version__
+
+    server_json = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
+    seite = re.search(
+        r'^const VERSION = "v([^"]+)";$', PAGE.read_text(encoding="utf-8"), re.MULTILINE
+    )
+    assert seite, "Auf der Seite ist keine Version zu finden"
+
+    assert server_json["version"] == __version__, (
+        f"server.json: {server_json['version']}, __init__.py: {__version__}"
+    )
+    assert seite.group(1) == __version__, (
+        f"Website: {seite.group(1)}, __init__.py: {__version__}"
+    )
