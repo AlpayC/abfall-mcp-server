@@ -1,4 +1,18 @@
-- uses: AlpayC/mcp-migration-check@v1
-  with:
-    source: https://abfall-mcp.alpaycelik.dev/mcp          # or: url: https://example.com/mcp
-    fail-on: critical  # critical (default) | warning | never
+name: MCP migration check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  migration-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check MCP endpoint
+        uses: AlpayC/mcp-migration-check@v1
+        with:
+          url: https://abfall-mcp.alpaycelik.dev/mcp
+          fail-on: critical
