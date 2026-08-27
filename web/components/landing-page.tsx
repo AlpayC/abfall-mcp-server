@@ -15,12 +15,10 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AnimatedShinyText } from "@/components/ui/animated-shiny-text";
-import { BlurFade } from "@/components/ui/blur-fade";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { GridPattern } from "@/components/ui/grid-pattern";
 import { Marquee } from "@/components/ui/marquee";
 import { NumberTicker } from "@/components/ui/number-ticker";
-import { TextAnimate } from "@/components/ui/text-animate";
 import {
   AnimatedSpan,
   Terminal,
@@ -497,11 +495,13 @@ export function LandingPage({ language }: { language: Language }) {
         </div>
       </header>
 
+      <div className="hero-bg" aria-hidden="true">
+        <GridPattern className="hero-grid" width={64} height={64} />
+        <span className="glow" />
+      </div>
+
       <main className="wrap" id="top">
         <section className="masthead">
-          <span className="glow" aria-hidden="true" />
-          <GridPattern className="hero-grid" width={64} height={64} />
-
           <div className="badge-row">
             <span className={cn("status-pill", `is-${health}`)}>
               <span className="ping" />
@@ -509,17 +509,39 @@ export function LandingPage({ language }: { language: Language }) {
                 {health === "online" ? t.online : health === "offline" ? t.offline : t.checking}
               </AnimatedShinyText>
             </span>
-            <span className="label-mono">{t.eyebrow} · {VERSION}</span>
+            <span className="label-mono">{t.eyebrow}</span>
           </div>
 
-          <h1>
-            <TextAnimate as="span" by="word" animation="blurInUp" startOnView={false} className="block">
-              {t.headline}
-            </TextAnimate>
-            <span className="grad">{t.headlineAccent}</span>
-          </h1>
+          <div className="title-line">
+            <h1>
+              <span className="block">{t.headline}</span>
+              <span className="grad">{t.headlineAccent}</span>
+            </h1>
+            <span className="version">{VERSION}</span>
+          </div>
 
           <p className="lede">{t.lede}</p>
+
+          {/* Eine Zeile mit allem, was ein Client wissen muss. */}
+          <div className={cn("facts", `is-${health}`)}>
+            <span className="live-dot" />
+            <span>{health === "online" ? t.online : health === "offline" ? t.offline : t.checking}</span>
+            <span className="sep">·</span>
+            <span><b><NumberTicker value={PROVIDERS} /></b> {t.traeger}</span>
+            <span className="sep">·</span>
+            <span><b><NumberTicker value={SOURCES} /></b> {t.quellen}</span>
+            <span className="sep">·</span>
+            <span><b>5</b> {t.toolsWord}</span>
+            <span className="sep">·</span>
+            <span><b>1</b> {t.resourceWord}</span>
+            <span className="sep">·</span>
+            <span>{t.protokoll} <span className="val">{PROTOCOL}</span></span>
+            <span className="sep">·</span>
+            <a href={REPO} rel="noreferrer" target="_blank">
+              github <b>AlpayC/mcp-abfall</b>
+              <ExternalLink size={11} />
+            </a>
+          </div>
 
           <div className="cta-row">
             <a className="btn btn-primary" href="#connect">
@@ -540,25 +562,6 @@ export function LandingPage({ language }: { language: Language }) {
             </span>
           </div>
 
-          <dl className="stats">
-            <div className="stat">
-              <dd><NumberTicker value={PROVIDERS} /></dd>
-              <dt>{t.traeger}</dt>
-            </div>
-            <div className="stat">
-              <dd><NumberTicker value={SOURCES} /></dd>
-              <dt>{t.quellen}</dt>
-            </div>
-            <div className="stat">
-              <dd>5</dd>
-              <dt>{t.toolsWord}</dt>
-            </div>
-            <div className="stat">
-              <dd>0</dd>
-              <dt>{t.keys}</dt>
-            </div>
-          </dl>
-
           <div className="scroll-hint">
             <ArrowDown size={14} />
             <span className="label-mono">{t.scrollHint}</span>
@@ -566,7 +569,6 @@ export function LandingPage({ language }: { language: Language }) {
           </div>
         </section>
 
-        <BlurFade delay={0.03}>
           <section className="sec" id="connect">
             <Head label={t.connect} count={PROTOCOL} />
             <p className="sec-note">{t.connectNote}</p>
@@ -575,9 +577,7 @@ export function LandingPage({ language }: { language: Language }) {
               <AnimatedShinyText>{t.built}</AnimatedShinyText>
             </span>
           </section>
-        </BlurFade>
 
-        <BlurFade delay={0.04}>
           <section className="sec">
             <Head label={t.demo} />
             <div className="demo">
@@ -590,9 +590,7 @@ export function LandingPage({ language }: { language: Language }) {
               </Terminal>
             </div>
           </section>
-        </BlurFade>
 
-        <BlurFade delay={0.08}>
           <section className="sec" id="tools">
             <Head label={t.toolsLabel} count="5" />
             <p className="sec-note">{t.toolsNote}</p>
@@ -639,9 +637,7 @@ export function LandingPage({ language }: { language: Language }) {
               </div>
             </div>
           </section>
-        </BlurFade>
 
-        <BlurFade delay={0.12}>
           <section className="sec" id="coverage">
             <Head label={t.coverage} count={`${PROVIDERS} × ${SOURCES}`} />
             <p className="sec-note">{t.coverageNote}</p>
@@ -652,9 +648,7 @@ export function LandingPage({ language }: { language: Language }) {
               </Marquee>
             </div>
           </section>
-        </BlurFade>
 
-        <BlurFade delay={0.16}>
           <section className="sec">
             <Head label={t.resolve} />
             <p className="sec-note">{t.resolveNote}</p>
@@ -671,7 +665,6 @@ export function LandingPage({ language }: { language: Language }) {
               </div>
             </div>
           </section>
-        </BlurFade>
       </main>
 
       <footer className="wrap foot">

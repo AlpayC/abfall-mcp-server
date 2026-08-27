@@ -173,11 +173,25 @@ a:focus-visible {
    -------------------------------------------------------------------------- */
 
 .doc {
-  --col: 860px;
-  --gutter: clamp(18px, 4vw, 28px);
+  /* max-w-7xl wie im Portfolio - 860px liessen links und rechts zu viel Rand. */
+  --col: 1280px;
+  --gutter: clamp(20px, 4vw, 48px);
+  position: relative;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Der Kopfhintergrund liegt ausserhalb der Inhaltsspalte und deckt die volle
+   Breite ab. Bewusst ueber einen eigenen Kasten statt ueber 100vw: 100vw
+   rechnet die Scrollleiste mit und erzeugt einen horizontalen Scrollbalken. */
+.hero-bg {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 460px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .wrap {
@@ -262,26 +276,22 @@ a:focus-visible {
   padding-block: 52px 0;
 }
 
-.hero-grid {
+.hero-grid,
+.glow {
   position: absolute;
   inset: 0;
-  height: 340px;
+}
+
+.hero-grid {
   color: var(--grid);
   mask-image: radial-gradient(120% 80% at 50% 0%, #000, transparent);
-  pointer-events: none;
-  z-index: 0;
 }
 
 .glow {
-  position: absolute;
-  inset: -120px -30% auto;
-  height: 380px;
-  background: radial-gradient(460px 200px at 30% 0%, var(--glow), transparent 70%);
-  pointer-events: none;
-  z-index: 0;
+  background: radial-gradient(640px 280px at 26% 8%, var(--glow), transparent 70%);
 }
 
-.masthead > *:not(.glow):not(.hero-grid) {
+main.wrap {
   position: relative;
   z-index: 1;
 }
@@ -350,8 +360,30 @@ a:focus-visible {
   75%, 100% { transform: scale(2.4); opacity: 0; }
 }
 
+.title-line {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 22px;
+}
+
+.version {
+  flex: none;
+  margin-top: 10px;
+  padding: 4px 11px;
+  border: 1px solid color-mix(in srgb, var(--primary) 38%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-ink);
+  white-space: nowrap;
+}
+
 .masthead h1 {
-  margin: 22px 0 0;
+  margin: 0;
   font-size: clamp(2.25rem, 5.2vw, 4rem);
   font-weight: 600;
   line-height: 1.02;
@@ -361,7 +393,7 @@ a:focus-visible {
 /* Der Verlauf von Lime nach Orange ist das Markenzeichen des Portfolios. */
 .grad {
   display: block;
-  background: linear-gradient(100deg, var(--primary-ink) 0%, var(--primary-ink) 30%, var(--accent-ink) 95%);
+  background: linear-gradient(to right in oklab, var(--primary-ink) 0%, var(--primary-ink) 50%, var(--accent-ink) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -431,41 +463,53 @@ a:focus-visible {
 
 .icon-btn:hover { background: var(--card); color: var(--primary-ink); }
 
-/* Kennzahlen als Hairline-Raster: gap-px auf Rahmenfarbe, Zellen in Kartenfarbe. */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1px;
-  margin: 28px 0 0;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--border);
-  overflow: hidden;
-}
-
-.stat {
+/* Faktenzeile: eine dichte Monospace-Zeile zwischen zwei Haarlinien. */
+.facts {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 18px 16px;
-  background: var(--card);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 28px;
+  padding-block: 11px;
+  border-block: 1px solid var(--border);
+  font-family: var(--font-code);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
 }
 
-.stat dd {
-  margin: 0;
-  font-family: var(--font-code);
-  font-size: 1.75rem;
+.facts b {
+  color: var(--ink);
   font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--primary-ink);
   font-variant-numeric: tabular-nums;
 }
 
-.stat dt {
-  font-size: 0.75rem;
-  line-height: 1.35;
+.facts .sep { color: var(--ink-muted); }
+
+.facts .val { color: var(--primary-ink); }
+
+.facts a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: var(--ink-soft);
 }
+
+.facts a b { text-decoration: underline; text-underline-offset: 3px; }
+.facts a:hover b { color: var(--primary-ink); }
+
+.facts .live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ink-muted);
+}
+
+.is-online .live-dot {
+  background: var(--primary);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+
+.is-offline .live-dot { background: var(--accent); }
 
 .scroll-hint {
   display: flex;
