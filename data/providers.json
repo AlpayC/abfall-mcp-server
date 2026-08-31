@@ -1,6 +1,6 @@
 {
  "version": 1,
- "count": 995,
+ "count": 996,
  "providers": [
   {
    "id": "muellmann_app_de.aach.7f9d9b",
@@ -27774,6 +27774,38 @@
     "city"
    ],
    "doc": "Source for AWIDO waste collection."
+  },
+  {
+   "id": "geilenkirchen_de.stadt-geilenkirchen.838708",
+   "source": "geilenkirchen_de",
+   "title": "Stadt Geilenkirchen",
+   "country": "de",
+   "url": "https://www.geilenkirchen.de",
+   "arg_specs": [
+    {
+     "name": "street",
+     "required": true,
+     "label": "Straße"
+    }
+   ],
+   "open_args": [
+    "street"
+   ],
+   "examples": [
+    {
+     "name": "Aldenhovener Strasse",
+     "args": {
+      "street": "Aldenhovener Strasse"
+     }
+    },
+    {
+     "name": "Ahornweg",
+     "args": {
+      "street": "Ahornweg"
+     }
+    }
+   ],
+   "doc": "Source for the waste collection calendar of the city of Geilenkirchen, North Rhine-Westphalia, Germany."
   },
   {
    "id": "gemuenden_wohra_de.stadt-gemuenden-wohra.4eff91",
