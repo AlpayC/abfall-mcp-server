@@ -1,6 +1,6 @@
 {
  "version": 1,
- "count": 995,
+ "count": 998,
  "providers": [
   {
    "id": "muellmann_app_de.aach.7f9d9b",
@@ -2594,6 +2594,23 @@
      "name": "mm_frm_hnr_sel",
      "required": false,
      "label": "Hausnummer"
+    }
+   ],
+   "examples": [
+    {
+     "name": "Münster, Achatiusweg",
+     "args": {
+      "service": "Awm",
+      "mm_frm_str_sel": "Achatiusweg"
+     }
+    },
+    {
+     "name": "Münster, Patronatsstr. 13 (unique street match)",
+     "args": {
+      "service": "Awm",
+      "mm_frm_str_sel": "Patronatsstr.",
+      "mm_frm_hnr_sel": 13
+     }
     }
    ],
    "doc": "Source for Müllmax waste collection."
@@ -9718,6 +9735,16 @@
      "label": "Hausnummer"
     }
    ],
+   "examples": [
+    {
+     "name": "Mainz, Holunderweg 5 (stale district in value)",
+     "args": {
+      "service": "Ebm",
+      "mm_frm_str_sel": "Holunderweg",
+      "mm_frm_hnr_sel": "55128;Mainz;5;"
+     }
+    }
+   ],
    "doc": "Source for Müllmax waste collection."
   },
   {
@@ -11155,6 +11182,41 @@
     }
    ],
    "doc": "Generische ICS-Quelle, konfiguriert laut doc/ics/huellhorst_de.md."
+  },
+  {
+   "id": "ismaning_de.gemeinde-ismaning-abfallkalender.53c616",
+   "source": "ismaning_de",
+   "title": "Gemeinde Ismaning – Abfallkalender",
+   "country": "de",
+   "url": "https://ismaning.de/umwelt-energie/abfall/abfallkalender/",
+   "arg_specs": [
+    {
+     "name": "street",
+     "required": false,
+     "label": "Straße"
+    },
+    {
+     "name": "street_nr",
+     "required": false,
+     "label": "Hausnummer"
+    }
+   ],
+   "examples": [
+    {
+     "name": "Am Englischen Garten (ohne Hausnummer)",
+     "args": {
+      "street": "Am Englischen Garten"
+     }
+    },
+    {
+     "name": "Bahnhofstraße 5 (mit Hausnummer)",
+     "args": {
+      "street": "Bahnhofstraße",
+      "street_nr": "5"
+     }
+    }
+   ],
+   "doc": "Source for the waste collection schedule of the community Ismaning, Germany."
   },
   {
    "id": "cmcitymedia_de.gemeinde-kalletal.42ddb6",
@@ -15377,6 +15439,17 @@
      "required": false
     }
    ],
+   "examples": [
+    {
+     "name": "de.k4systems.abfallappfds Horb am Neckar Marktplatz 1",
+     "args": {
+      "app_id": "de.k4systems.abfallappfds",
+      "city": "Horb am Neckar",
+      "strasse": "Marktplatz",
+      "hnr": 1
+     }
+    }
+   ],
    "doc": "Source for Apps by Abfall+."
   },
   {
@@ -19002,7 +19075,7 @@
        "tag": "0",
        "uhrzeit": ""
       },
-      "url": "https://mobil.abfallwirtschaft-heidenheim.de/icalendar/download.php",
+      "url": "https://mobil.abfallwirtschaft-heidenheim.de/ical.php",
       "year_field": "jahr"
      }
     },
@@ -19024,7 +19097,7 @@
        "uhrzeit": ""
       },
       "split_at": "\\+",
-      "url": "https://mobil.abfallwirtschaft-heidenheim.de/icalendar/download.php",
+      "url": "https://mobil.abfallwirtschaft-heidenheim.de/ical.php",
       "year_field": "jahr"
      }
     }
@@ -19378,6 +19451,57 @@
     }
    ],
    "doc": "Source for Landkreis Kusel."
+  },
+  {
+   "id": "abfall_io.landkreis-landshut.5b6203",
+   "source": "abfall_io",
+   "title": "Landkreis Landshut",
+   "country": "de",
+   "url": "https://www.landkreis-landshut.de/",
+   "default_args": {
+    "key": "04b7561b94f2cbaa171cd85bb6aa56de"
+   },
+   "arg_specs": [
+    {
+     "name": "key",
+     "required": true
+    },
+    {
+     "name": "f_id_kommune",
+     "required": true
+    },
+    {
+     "name": "f_id_strasse",
+     "required": true
+    },
+    {
+     "name": "f_id_bezirk",
+     "required": false
+    },
+    {
+     "name": "f_id_strasse_hnr",
+     "required": false
+    },
+    {
+     "name": "f_abfallarten",
+     "required": false
+    }
+   ],
+   "open_args": [
+    "f_id_kommune",
+    "f_id_strasse"
+   ],
+   "examples": [
+    {
+     "name": "Landkreis Landshut, Altfraunhofen, Am Bäckerfeld",
+     "args": {
+      "key": "04b7561b94f2cbaa171cd85bb6aa56de",
+      "f_id_kommune": 3791,
+      "f_id_strasse": 314
+     }
+    }
+   ],
+   "doc": "Source for AbfallPlus.de waste collection. Service is hosted on abfall.io."
   },
   {
    "id": "jumomind_de.landkreis-leer-mymuell-app.7d1de2",
@@ -20046,6 +20170,34 @@
      "name": "Adlerstraße (Peine-Kernstadt)",
      "args": {
       "strasse": "Adlerstraße"
+     }
+    },
+    {
+     "name": "Adlerstraße with municipality",
+     "args": {
+      "strasse": "Adlerstraße",
+      "ort": "Peine-Kernstadt (mit Telgte)"
+     }
+    },
+    {
+     "name": "Osterriehe (Broistedt)",
+     "args": {
+      "strasse": "Osterriehe",
+      "ort": "Broistedt"
+     }
+    },
+    {
+     "name": "Vechelde (Hauptort)",
+     "args": {
+      "strasse": "alle Straßen",
+      "ort": "Vechelde (Hauptort)"
+     }
+    },
+    {
+     "name": "Wendeburg (Hauptort)",
+     "args": {
+      "strasse": "alle Straßen",
+      "ort": "Wendeburg (Hauptort)"
      }
     }
    ],
@@ -27776,6 +27928,38 @@
    "doc": "Source for AWIDO waste collection."
   },
   {
+   "id": "geilenkirchen_de.stadt-geilenkirchen.838708",
+   "source": "geilenkirchen_de",
+   "title": "Stadt Geilenkirchen",
+   "country": "de",
+   "url": "https://www.geilenkirchen.de",
+   "arg_specs": [
+    {
+     "name": "street",
+     "required": true,
+     "label": "Straße"
+    }
+   ],
+   "open_args": [
+    "street"
+   ],
+   "examples": [
+    {
+     "name": "Aldenhovener Strasse",
+     "args": {
+      "street": "Aldenhovener Strasse"
+     }
+    },
+    {
+     "name": "Ahornweg",
+     "args": {
+      "street": "Ahornweg"
+     }
+    }
+   ],
+   "doc": "Source for the waste collection calendar of the city of Geilenkirchen, North Rhine-Westphalia, Germany."
+  },
+  {
    "id": "gemuenden_wohra_de.stadt-gemuenden-wohra.4eff91",
    "source": "gemuenden_wohra_de",
    "title": "Stadt Gemünden (Wohra)",
@@ -29689,45 +29873,52 @@
    "doc": "Source script for tbv-velbert.de, germany"
   },
   {
-   "id": "abfall_io.team-orange-landkreis-wuerzburg.ed96cb",
-   "source": "abfall_io",
+   "id": "team_orange_de.team-orange-landkreis-wuerzburg.1633c4",
+   "source": "team_orange_de",
    "title": "Team Orange (Landkreis Würzburg)",
    "country": "de",
-   "url": "https://www.team-orange.info/",
-   "default_args": {
-    "key": "3701fd1ff111f63996ab46a448669ea3"
-   },
+   "url": "https://www.team-orange.info",
    "arg_specs": [
     {
-     "name": "key",
-     "required": true
+     "name": "ort",
+     "required": true,
+     "label": "Ort"
     },
     {
-     "name": "f_id_kommune",
-     "required": true
+     "name": "strasse",
+     "required": true,
+     "label": "Straße"
     },
     {
-     "name": "f_id_strasse",
-     "required": true
-    },
-    {
-     "name": "f_id_bezirk",
-     "required": false
-    },
-    {
-     "name": "f_id_strasse_hnr",
-     "required": false
-    },
-    {
-     "name": "f_abfallarten",
-     "required": false
+     "name": "hausnummer",
+     "required": true,
+     "label": "Hausnummer"
     }
    ],
    "open_args": [
-    "f_id_kommune",
-    "f_id_strasse"
+    "ort",
+    "strasse",
+    "hausnummer"
    ],
-   "doc": "Source for AbfallPlus.de waste collection. Service is hosted on abfall.io."
+   "examples": [
+    {
+     "name": "Altertheim",
+     "args": {
+      "ort": "Altertheim",
+      "strasse": "Am Berg",
+      "hausnummer": 1
+     }
+    },
+    {
+     "name": "Reichenberg (Rathaus)",
+     "args": {
+      "ort": "Reichenberg",
+      "strasse": "Kirchgasse",
+      "hausnummer": 5
+     }
+    }
+   ],
+   "doc": "Source for team orange waste collection in Landkreis Würzburg."
   },
   {
    "id": "ics.technischer-betriebsdienst-reutlingen.0cabfe",
@@ -32408,6 +32599,15 @@
       "street": "Stadtgraben",
       "hnr": "1"
      }
+    },
+    {
+     "name": "Schwarzach Harpfen 4 A",
+     "args": {
+      "city": "Schwarzach",
+      "street": "Harpfen",
+      "hnr": "4",
+      "addition": "A"
+     }
     }
    ],
    "doc": "Source for ZAW-SR (Zweckverband Abfallwirtschaft Straubing Stadt und Land)."
@@ -32716,6 +32916,14 @@
       "strasse": "Im Bangert",
       "hnr": 9,
       "hnr_zusatz": "A"
+     }
+    },
+    {
+     "name": "Zwingenberg, Wiesenpromenade-West 41",
+     "args": {
+      "ort": "Zwingenberg",
+      "strasse": "Wiesenpromenade-West",
+      "hnr": 41
      }
     }
    ],
