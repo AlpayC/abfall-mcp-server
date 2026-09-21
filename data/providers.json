@@ -1,6 +1,6 @@
 {
  "version": 1,
- "count": 998,
+ "count": 999,
  "providers": [
   {
    "id": "muellmann_app_de.aach.7f9d9b",
@@ -9970,6 +9970,44 @@
     }
    ],
    "doc": "Unofficial waste collection schedule for Landkreis Northeim via abfall.nerdbridge.de."
+  },
+  {
+   "id": "sperrmuell_erlensee_de.erlensee.1948dc",
+   "source": "sperrmuell_erlensee_de",
+   "title": "Erlensee",
+   "country": "de",
+   "url": "https://sperrmuell.erlensee.de/",
+   "arg_specs": [
+    {
+     "name": "street",
+     "required": true,
+     "label": "Straße"
+    }
+   ],
+   "open_args": [
+    "street"
+   ],
+   "examples": [
+    {
+     "name": "Am Rathaus",
+     "args": {
+      "street": "Am Rathaus"
+     }
+    },
+    {
+     "name": "Am Haspel",
+     "args": {
+      "street": "Am Haspel"
+     }
+    },
+    {
+     "name": "Oberhörr (Sandhof / Sonnenhof)",
+     "args": {
+      "street": "Oberhörr (Sandhof / Sonnenhof)"
+     }
+    }
+   ],
+   "doc": "Source for waste collection in Erlensee, Hessen."
   },
   {
    "id": "nerdbridge_de.ertinghausen.1e251a",
@@ -28319,6 +28357,16 @@
       "f_id_kommune": 2655,
       "f_id_bezirk": 2655,
       "f_id_strasse": 763
+     }
+    },
+    {
+     "name": "Landshut (f_abfallarten as comma separated string)",
+     "args": {
+      "key": "bd0c2d0177a0849a905cded5cb734a6f",
+      "f_id_kommune": 2655,
+      "f_id_bezirk": 2655,
+      "f_id_strasse": 763,
+      "f_abfallarten": "31,17,19,218"
      }
     }
    ],
