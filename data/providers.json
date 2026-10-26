@@ -1,6 +1,6 @@
 {
  "version": 1,
- "count": 999,
+ "count": 994,
  "providers": [
   {
    "id": "muellmann_app_de.aach.7f9d9b",
@@ -7900,6 +7900,162 @@
    "doc": "Unofficial waste collection schedule for Landkreis Northeim via abfall.nerdbridge.de."
   },
   {
+   "id": "cmcitymedia_de.cm-city-media-muellkalender.468459",
+   "source": "cmcitymedia_de",
+   "title": "CM City Media - Müllkalender",
+   "country": "de",
+   "url": "https://cmcitymedia.de",
+   "arg_specs": [
+    {
+     "name": "hpid",
+     "required": true
+    },
+    {
+     "name": "realmid",
+     "required": false
+    },
+    {
+     "name": "district",
+     "required": false
+    }
+   ],
+   "open_args": [
+    "hpid"
+   ],
+   "examples": [
+    {
+     "name": "Blankenheim - Bezirk F: Lindweiler, Rohr",
+     "args": {
+      "hpid": 415,
+      "district": 1371
+     }
+    },
+    {
+     "name": "Blankenheim",
+     "args": {
+      "hpid": 415,
+      "realmid": 41500
+     }
+    },
+    {
+     "name": "Oberstadion",
+     "args": {
+      "hpid": 447,
+      "district": 1349
+     }
+    },
+    {
+     "name": "Gemeinde Blankenheim",
+     "args": {
+      "hpid": 415
+     }
+    },
+    {
+     "name": "Landkreis Schwäbisch Hall",
+     "args": {
+      "hpid": 95
+     }
+    },
+    {
+     "name": "Gemeinde Bühlerzell",
+     "args": {
+      "hpid": 1
+     }
+    },
+    {
+     "name": "Gemeinde Kressbronn am Bodensee",
+     "args": {
+      "hpid": 107
+     }
+    },
+    {
+     "name": "Hohenlohekreis",
+     "args": {
+      "hpid": 168
+     }
+    },
+    {
+     "name": "Gemeinde Deggenhausertal",
+     "args": {
+      "hpid": 225
+     }
+    },
+    {
+     "name": "Stadt Kraichtal",
+     "args": {
+      "hpid": 233
+     }
+    },
+    {
+     "name": "Gemeinde Kappelrodeck",
+     "args": {
+      "hpid": 248
+     }
+    },
+    {
+     "name": "Gemeinde Schutterwald",
+     "args": {
+      "hpid": 331
+     }
+    },
+    {
+     "name": "Gemeinde Aschheim",
+     "args": {
+      "hpid": 374
+     }
+    },
+    {
+     "name": "Gemeinde Mittelbiberach",
+     "args": {
+      "hpid": 390
+     }
+    },
+    {
+     "name": "Stadt Ehingen",
+     "args": {
+      "hpid": 391
+     }
+    },
+    {
+     "name": "Gemeinde Senden (Westfalen)",
+     "args": {
+      "hpid": 420
+     }
+    },
+    {
+     "name": "Stadt Emden",
+     "args": {
+      "hpid": 421
+     }
+    },
+    {
+     "name": "Stadt Emmendingen",
+     "args": {
+      "hpid": 424
+     }
+    },
+    {
+     "name": "Gemeinde Kalletal",
+     "args": {
+      "hpid": 426
+     }
+    },
+    {
+     "name": "Stadt Messstetten",
+     "args": {
+      "hpid": 441
+     }
+    },
+    {
+     "name": "Gemeinde Oberstadion",
+     "args": {
+      "hpid": 447
+     }
+    }
+   ],
+   "doc": "Source script for cmcitymedia.de"
+  },
+  {
    "id": "ceb_coburg_de.coburg-entsorgungs-und-baubetrieb-ceb.c4eff4",
    "source": "ceb_coburg_de",
    "title": "Coburg Entsorgungs- und Baubetrieb CEB",
@@ -10945,86 +11101,6 @@
    "doc": "Generische ICS-Quelle, konfiguriert laut doc/ics/gelsendienste_de.md."
   },
   {
-   "id": "cmcitymedia_de.gemeinde-blankenheim.810e69",
-   "source": "cmcitymedia_de",
-   "title": "Gemeinde Blankenheim",
-   "country": "de",
-   "url": "https://cmcitymedia.de",
-   "default_args": {
-    "hpid": 415
-   },
-   "arg_specs": [
-    {
-     "name": "hpid",
-     "required": true
-    },
-    {
-     "name": "realmid",
-     "required": false
-    },
-    {
-     "name": "district",
-     "required": false
-    }
-   ],
-   "examples": [
-    {
-     "name": "Blankenheim - Bezirk F: Lindweiler, Rohr",
-     "args": {
-      "hpid": 415,
-      "district": 1371
-     }
-    },
-    {
-     "name": "Blankenheim",
-     "args": {
-      "hpid": 415,
-      "realmid": 41500
-     }
-    },
-    {
-     "name": "Gemeinde Blankenheim",
-     "args": {
-      "hpid": 415
-     }
-    }
-   ],
-   "doc": "Source script for cmcitymedia.de"
-  },
-  {
-   "id": "cmcitymedia_de.gemeinde-deggenhausertal.dd458d",
-   "source": "cmcitymedia_de",
-   "title": "Gemeinde Deggenhausertal",
-   "country": "de",
-   "url": "https://cmcitymedia.de",
-   "default_args": {
-    "hpid": 225
-   },
-   "arg_specs": [
-    {
-     "name": "hpid",
-     "required": true
-    },
-    {
-     "name": "realmid",
-     "required": false
-    },
-    {
-     "name": "district",
-     "required": false
-    }
-   ],
-   "examples": [
-    {
-     "name": "Gemeinde Deggenhausertal",
-     "args": {
-      "hpid": 225
-     }
-    }
-   ],
-   "doc": "Source script for cmcitymedia.de"
-  },
-  {
    "id": "abfall_io.gemeinde-gross-pankow-landkreis-prignitz.677533",
    "source": "abfall_io",
    "title": "Gemeinde Groß Pankow (Landkreis Prignitz)",
@@ -11255,39 +11331,6 @@
     }
    ],
    "doc": "Source for the waste collection schedule of the community Ismaning, Germany."
-  },
-  {
-   "id": "cmcitymedia_de.gemeinde-kalletal.42ddb6",
-   "source": "cmcitymedia_de",
-   "title": "Gemeinde Kalletal",
-   "country": "de",
-   "url": "https://cmcitymedia.de",
-   "default_args": {
-    "hpid": 426
-   },
-   "arg_specs": [
-    {
-     "name": "hpid",
-     "required": true
-    },
-    {
-     "name": "realmid",
-     "required": false
-    },
-    {
-     "name": "district",
-     "required": false
-    }
-   ],
-   "examples": [
-    {
-     "name": "Gemeinde Kalletal",
-     "args": {
-      "hpid": 426
-     }
-    }
-   ],
-   "doc": "Source script for cmcitymedia.de"
   },
   {
    "id": "abfall_io.gemeinde-karstaedt-landkreis-prignitz.0c7025",
@@ -11548,39 +11591,6 @@
     "ort"
    ],
    "doc": "Source for AbfallNavi waste collection. AbfallNavi is a brand name of regioit.de."
-  },
-  {
-   "id": "cmcitymedia_de.gemeinde-schutterwald.856509",
-   "source": "cmcitymedia_de",
-   "title": "Gemeinde Schutterwald",
-   "country": "de",
-   "url": "https://cmcitymedia.de",
-   "default_args": {
-    "hpid": 331
-   },
-   "arg_specs": [
-    {
-     "name": "hpid",
-     "required": true
-    },
-    {
-     "name": "realmid",
-     "required": false
-    },
-    {
-     "name": "district",
-     "required": false
-    }
-   ],
-   "examples": [
-    {
-     "name": "Gemeinde Schutterwald",
-     "args": {
-      "hpid": 331
-     }
-    }
-   ],
-   "doc": "Source script for cmcitymedia.de"
   },
   {
    "id": "awido_de.gemeinde-unterhaching.aebdf1",
@@ -27802,39 +27812,6 @@
    "doc": "Source for AbfallNavi waste collection. AbfallNavi is a brand name of regioit.de."
   },
   {
-   "id": "cmcitymedia_de.stadt-emmendingen.16890d",
-   "source": "cmcitymedia_de",
-   "title": "Stadt Emmendingen",
-   "country": "de",
-   "url": "https://cmcitymedia.de",
-   "default_args": {
-    "hpid": 424
-   },
-   "arg_specs": [
-    {
-     "name": "hpid",
-     "required": true
-    },
-    {
-     "name": "realmid",
-     "required": false
-    },
-    {
-     "name": "district",
-     "required": false
-    }
-   ],
-   "examples": [
-    {
-     "name": "Stadt Emmendingen",
-     "args": {
-      "hpid": 424
-     }
-    }
-   ],
-   "doc": "Source script for cmcitymedia.de"
-  },
-  {
    "id": "ics.stadt-enger.850090",
    "source": "ics",
    "title": "Stadt Enger",
@@ -28499,39 +28476,6 @@
     "city"
    ],
    "doc": "Source for AWIDO waste collection."
-  },
-  {
-   "id": "cmcitymedia_de.stadt-messstetten.e95f45",
-   "source": "cmcitymedia_de",
-   "title": "Stadt Messstetten",
-   "country": "de",
-   "url": "https://cmcitymedia.de",
-   "default_args": {
-    "hpid": 441
-   },
-   "arg_specs": [
-    {
-     "name": "hpid",
-     "required": true
-    },
-    {
-     "name": "realmid",
-     "required": false
-    },
-    {
-     "name": "district",
-     "required": false
-    }
-   ],
-   "examples": [
-    {
-     "name": "Stadt Messstetten",
-     "args": {
-      "hpid": 441
-     }
-    }
-   ],
-   "doc": "Source script for cmcitymedia.de"
   },
   {
    "id": "abfallnavi_de.stadt-norderstedt.862010",
